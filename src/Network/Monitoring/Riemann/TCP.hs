@@ -5,13 +5,13 @@ module Network.Monitoring.Riemann.TCP
     , Port
     ) where
 
+import           Control.Concurrent.MVar
 import           Control.Exception
 import           Data.Binary.Put                      as Put
 import qualified Data.ByteString.Lazy                 as BS
 import qualified Data.ByteString.Lazy.Char8           as BC
-import           Data.IORef
 import qualified Data.Maybe                           as Maybe
-import           Data.Text                            ( Text )
+import           Data.Text                            (Text)
 import qualified Network.Monitoring.Riemann.Proto.Msg as Msg
 import           Network.Socket
 import           Network.Socket.ByteString.Lazy       as NSB
@@ -20,7 +20,7 @@ import           Text.ProtocolBuffers.WireMessage     as WM
 
 type ClientInfo = (HostName, Port, TCPStatus)
 
-type TCPClient = IORef ClientInfo
+type TCPClient = MVar ClientInfo
 
 data TCPStatus = CnxClosed
                | CnxOpen (Socket, AddrInfo)
@@ -33,7 +33,7 @@ type Port = Int
 tcpClient :: HostName -> Port -> IO TCPClient
 tcpClient h p = do
     connection <- doConnect h p
-    newIORef (h, p, CnxOpen connection)
+    newMVar (h, p, CnxOpen connection)
 
 getConnection :: ClientInfo -> IO (Socket, AddrInfo)
 getConnection (h, p, CnxOpen (s, a)) =
@@ -73,13 +73,15 @@ decodeMsg bs = let result = messageGet (BS.drop 4 bs)
 
 sendMsg :: TCPClient -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
 sendMsg client msg = do
-    clientInfo@(h, p, state) <- readIORef client
+    clientInfo@(h, p, state) <- takeMVar client
     (s, a) <- getConnection clientInfo
     sendAll s $ msgToByteString msg
     bs <- NSB.recv s 4096
     result <- pure $ decodeMsg bs
     case result of
-        Right m -> return $ Right m
+        Right m -> do
+            putMVar client clientInfo
+            return $ Right m
         Left e -> do
-            writeIORef client (h, p, CnxClosed)
+            putMVar client (h, p, CnxClosed)
             return $ Left msg

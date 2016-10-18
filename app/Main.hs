@@ -23,5 +23,9 @@ main = do
     threadDelay 7000000
     putStrLn "send again"
     Event.sendEvent client event
+    Event.sendEvent client event
+    Event.sendEvent client event
+    Event.sendEvent client event
+    Event.sendEvent client event
     threadDelay 1000000
     putStrLn "finished"
