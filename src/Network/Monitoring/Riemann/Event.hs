@@ -94,9 +94,12 @@ attribute k mv = let k' = (Basic.Utf8 . BC.pack) k
 {-|
     Send a list of Riemann events - only use this function if you want to specify time and hostname
 -}
-sendEvents' :: TCPState -> [Event.Event] -> IO ()
-sendEvents' client events =
-    sendMsg client $ P'.defaultValue { Msg.events = fromList events }
+sendEvents' :: TCPClient -> [Event.Event] -> IO ()
+sendEvents' client events = do
+    result <- sendMsg client $ P'.defaultValue { Msg.events = fromList events }
+    case result of
+        Left msg -> print $ "failed to send" ++ show msg
+        Right _ -> return ()
 
 withDefaults :: [Event.Event] -> IO [Event.Event]
 withDefaults e = do
@@ -110,7 +113,7 @@ withDefaults e = do
 {-|
     Send an event to Riemann - will set current time and hostname
 -}
-sendEvent :: TCPState -> Event.Event -> IO ThreadId
+sendEvent :: TCPClient -> Event.Event -> IO ThreadId
 sendEvent client event =
     forkIO $ do
         events <- withDefaults [ event ]
@@ -119,7 +122,7 @@ sendEvent client event =
 {-|
     Send a list of events to Riemann - will set current time and hostname on each event
 -}
-sendEvents :: TCPState -> [Event.Event] -> IO ThreadId
+sendEvents :: TCPClient -> [Event.Event] -> IO ThreadId
 sendEvents client events =
     forkIO $ do
         events' <- withDefaults events

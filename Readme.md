@@ -11,7 +11,7 @@ It was initially inspired by [riemann-hs](https://github.com/tel/riemann-hs) how
 
 Please be aware that this is currently a work in progress and hasn't been well tested yet. I still have the following features to add:
 
-* No reconnection logic yet - This means you can't realistically use this library yet
+* Currently have IORef accessed by multiple threads, maybe MVar will work, each thread has to wait until the previous one has sent events
 * Optionally batch events before sending
 * Timeout if events take too long to send
 * Nicely log events to stdout if we fail to send to Riemann
