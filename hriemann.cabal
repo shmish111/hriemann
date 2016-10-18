@@ -1,13 +1,13 @@
 name:                hriemann
 version:             0.1.0.0
 synopsis:            Initial project template from stack
-description:         Please see README.md
-homepage:            https://github.com/githubuser/hriemann#readme
-license:             BSD3
+description:         A Riemann Client for Haskell
+homepage:            https://github.com/shmish111/hriemann
+license:             MIT
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2016 Author name here
+author:              David Smith
+maintainer:          shmish111@gmail.com
+copyright:           2016 David Smith
 category:            Web
 build-type:          Simple
 -- extra-source-files:
@@ -23,15 +23,15 @@ library
                        Network.Monitoring.Riemann.Proto.Query
                        Network.Monitoring.Riemann.Proto.State
   build-depends:       base >= 4.7 && < 5
-                     , protocol-buffers >= 2.4.0 && < 2.5
-                     , protocol-buffers-descriptor >= 2.4.0 && < 2.5
-                     , bytestring >= 0.10 && < 0.11
-                     , network >= 2.6 && < 2.7
-                     , text >= 1.2 && < 1.3
-                     , containers >= 0.5 && < 0.6
-                     , binary >= 0.8 && < 0.9
-                     , time >= 1.6 && < 1.7
-                     , hostname >= 1.0 && < 1.1
+                     , protocol-buffers == 2.4.*
+                     , protocol-buffers-descriptor == 2.4.*
+                     , bytestring == 0.10.*
+                     , network == 2.6.*
+                     , text == 1.2.*
+                     , containers == 0.5.*
+                     , binary == 0.8.*
+                     , time == 1.6.*
+                     , hostname == 1.0.*
   default-language:    Haskell2010
 
 executable hriemann-exe
@@ -53,4 +53,4 @@ test-suite hriemann-test
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/hriemann
+  location: https://github.com/shmish111/hriemann
