@@ -23,10 +23,10 @@ tcpClient h p = do
     return $ TCPClient c
 
 instance Client TCPClient where
-    sendEvents (TCPClient client) events = do
+    sendEvents (TCPClient connection) events = do
         forkIO $ do
             events <- Event.withDefaults events
-            TCP.sendEvents client events
+            TCP.sendEvents connection events
         return ()
-    sendEvent (TCPClient client) event =
-        TCP.sendEvents client [ event ]
+    sendEvent (TCPClient connection) event =
+        TCP.sendEvents connection [ event ]

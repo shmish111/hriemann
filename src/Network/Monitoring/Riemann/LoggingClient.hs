@@ -8,9 +8,7 @@ data LoggingClient = LoggingClient
 {-|
     A new LoggingClient
 
-    The TCPClient is a 'Client' that will simply print events
-
-    '''Note''': We never use IPv6 address resolved for given hostname.
+    The LoggingClient is a 'Client' that will simply print events
 -}
 loggingClient = LoggingClient
 

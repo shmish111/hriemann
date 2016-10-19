@@ -18,6 +18,9 @@ library
   exposed-modules:     Network.Monitoring.Riemann.Client
                        Network.Monitoring.Riemann.Event
                        Network.Monitoring.Riemann.TCP
+                       Network.Monitoring.Riemann.LoggingClient
+                       Network.Monitoring.Riemann.TCPClient
+                       Network.Monitoring.Riemann.BatchClient
   other-modules:       Network.Monitoring.Riemann.Proto.Attribute
                        Network.Monitoring.Riemann.Proto.Event
                        Network.Monitoring.Riemann.Proto.Msg
@@ -33,6 +36,7 @@ library
                      , binary == 0.8.*
                      , time == 1.6.*
                      , hostname == 1.0.*
+                     , unagi-chan == 0.4.*
   default-language:    Haskell2010
 
 executable hriemann-exe
