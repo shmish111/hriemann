@@ -3,7 +3,7 @@ module Main where
 import           Control.Concurrent
 import           Data.Function
 import qualified Network.Monitoring.Riemann.Event as Event
-import           Network.Monitoring.Riemann.TCP
+import Network.Monitoring.Riemann.TCPClient
 import Network.Monitoring.Riemann.Client
 
 main :: IO ()

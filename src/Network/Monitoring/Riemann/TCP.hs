@@ -2,8 +2,10 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Network.Monitoring.Riemann.TCP
-    ( tcpClient
-    , TCPClient
+    ( tcpConnection
+    , sendEvents
+    , sendMsg
+    , TCPConnection
     , Port
     ) where
 
@@ -16,7 +18,6 @@ import qualified Data.ByteString.Lazy.Char8             as BC
 import qualified Data.Maybe                             as Maybe
 import qualified Data.Sequence                          as Seq
 import           Data.Text                              (Text)
-import           Network.Monitoring.Riemann.Client
 import qualified Network.Monitoring.Riemann.Event       as Event
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Network.Monitoring.Riemann.Proto.Msg   as Msg
@@ -28,7 +29,7 @@ import           Text.ProtocolBuffers.WireMessage       as WM
 
 type ClientInfo = (HostName, Port, TCPStatus)
 
-type TCPClient = MVar ClientInfo
+type TCPConnection = MVar ClientInfo
 
 data TCPStatus = CnxClosed
                | CnxOpen (Socket, AddrInfo)
@@ -36,17 +37,8 @@ data TCPStatus = CnxClosed
 
 type Port = Int
 
-{-|
-    A new TCPClient
-
-    The TCPClient is a 'Client' that will send events asynchronously over TCP.
-
-    Current time and host name will be set if not provided.
-
-    '''Note''': We never use IPv6 address resolved for given hostname.
--}
-tcpClient :: HostName -> Port -> IO TCPClient
-tcpClient h p = do
+tcpConnection :: HostName -> Port -> IO TCPConnection
+tcpConnection h p = do
     connection <- doConnect h p
     newMVar (h, p, CnxOpen connection)
 
@@ -86,7 +78,7 @@ decodeMsg bs = let result = messageGet (BS.drop 4 bs)
                                        then Left "error"
                                        else Right m
 
-sendMsg :: TCPClient -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
+sendMsg :: TCPConnection -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
 sendMsg client msg = do
     clientInfo@(h, p, state) <- takeMVar client
     (s, a) <- getConnection clientInfo
@@ -104,20 +96,10 @@ sendMsg client msg = do
 {-|
     Send a list of Riemann events
 -}
-sendEvents' :: TCPClient -> [PE.Event] -> IO ()
-sendEvents' client events = do
+sendEvents :: TCPConnection -> [PE.Event] -> IO ()
+sendEvents client events = do
     result <- sendMsg client $
                   P'.defaultValue { Msg.events = Seq.fromList events }
     case result of
         Left msg -> print $ "failed to send" ++ show msg
         Right _  -> return ()
-
-instance Client TCPClient where
-    sendMessage = sendMsg
-    sendEvents client events = do
-        forkIO $ do
-            events <- Event.withDefaults events
-            sendEvents' client events
-        return ()
-    sendEvent client event =
-        sendEvents client [ event ]
