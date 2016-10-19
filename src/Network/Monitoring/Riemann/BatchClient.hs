@@ -93,6 +93,20 @@ riemannConsumer (inChan, outChan) connection =
                 putStrLn "stopping riemann consumer"
                 putMVar s ()
 
+{-|
+    The batcher will do the following
+    loop startTime
+        if startTime > now - period
+            send events and loop now
+        else if batch size = current size
+            send events and loop now
+        else try take event from outChan and add to batch then loop startTime
+-}
+-- TODO - batcher
+-- batcher :: RiemannChan -> Int -> TCPConnection -> IO ()
+
+
+
 closeBatchClient :: BatchClient -> IO ()
 closeBatchClient (BatchClient _ (inChan, _) _ _) = do
     s <- newEmptyMVar
@@ -101,5 +115,5 @@ closeBatchClient (BatchClient _ (inChan, _) _ _) = do
 
 instance Client BatchClient where
     sendEvents c = mapM_ (sendEvent c)
-    sendEvent (BatchClient connection (inChan, _) _ _) event =
+    sendEvent (BatchClient _ (inChan, _) _ _) event =
         Unagi.writeChan inChan $ Event event

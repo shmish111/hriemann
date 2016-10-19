@@ -10,9 +10,11 @@ It was initially inspired by [riemann-hs](https://github.com/tel/riemann-hs) how
 * No UDP client
 * Async TCP sending
 * Batching and async error handling (not implemented yet)
+* Deal with back pressure
 
 Please be aware that this is currently a work in progress and hasn't been well tested yet. I still have the following features to add:
 
+* Tests!!!
 * Optionally batch events before sending
 * Timeout if events take too long to send
 * Nicely log events to stdout if we fail to send to Riemann
