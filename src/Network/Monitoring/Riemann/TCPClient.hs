@@ -23,8 +23,6 @@ tcpClient h p = do
     return $ TCPClient c
 
 instance Client TCPClient where
-    sendMessage (TCPClient client) =
-        sendMsg client
     sendEvents (TCPClient client) events = do
         forkIO $ do
             events <- Event.withDefaults events
