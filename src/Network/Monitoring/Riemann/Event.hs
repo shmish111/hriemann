@@ -1,14 +1,36 @@
+{-|
+Module      : Network.Monitoring.Riemann.Event
+Description : A module for building Riemann events
+
+Build an event which can then be sent to Riemann using a 'Network.Monitoring.Riemann.Client.Client'
+
+Events are built by composing helper functions that set Riemann fields and applying to one of the Event constructors:
+
+@
+  Event.ok "my service"
+& Event.description "my description"
+& Event.metric (length [ "some data" ])
+& Event.ttl 20
+& Event.tags ["tag1", "tag2"]
+@
+
+With this design you are encouraged to create an event with one of 'Event.ok', 'Event.warn' or 'Event.failure'.
+
+This has been done because we found that it is best to avoid services like @my.service.success@ and @my.service.error@ (that's what the Riemann state field is for).
+
+You can use your own states using @Event.info & Event.state "trace"@ however this is discouraged as it doesn't show up nicely in riemann-dash.
+-}
 module Network.Monitoring.Riemann.Event where
 
 import           Control.Concurrent
 import qualified Data.ByteString.Lazy.Char8                 as BC
+import           Data.Maybe
 import           Data.Sequence
 import           Data.Time.Clock.POSIX
 import           Network.HostName
 import qualified Network.Monitoring.Riemann.Proto.Attribute as Attribute
 import qualified Network.Monitoring.Riemann.Proto.Event     as Event
 import qualified Network.Monitoring.Riemann.Proto.Msg       as Msg
-import           Network.Monitoring.Riemann.TCP
 import           Text.ProtocolBuffers.Basic                 as Basic
 import qualified Text.ProtocolBuffers.Header                as P'
 
@@ -92,15 +114,10 @@ attribute k mv = let k' = (Basic.Utf8 . BC.pack) k
                                      }
 
 {-|
-    Send a list of Riemann events - only use this function if you want to specify time and hostname
--}
-sendEvents' :: TCPClient -> [Event.Event] -> IO ()
-sendEvents' client events = do
-    result <- sendMsg client $ P'.defaultValue { Msg.events = fromList events }
-    case result of
-        Left msg -> print $ "failed to send" ++ show msg
-        Right _ -> return ()
+    Add local hostname and current time to an Event
 
+    This will not override any host or time in the provided event
+-}
 withDefaults :: [Event.Event] -> IO [Event.Event]
 withDefaults e = do
     now <- fmap round getPOSIXTime
@@ -108,22 +125,9 @@ withDefaults e = do
     return $ fmap (addTimeAndHost now hostname) e
   where
     addTimeAndHost now hostname e =
-        e { Event.time = Just now, Event.host = toField hostname }
-
-{-|
-    Send an event to Riemann - will set current time and hostname
--}
-sendEvent :: TCPClient -> Event.Event -> IO ThreadId
-sendEvent client event =
-    forkIO $ do
-        events <- withDefaults [ event ]
-        sendEvents' client events
-
-{-|
-    Send a list of events to Riemann - will set current time and hostname on each event
--}
-sendEvents :: TCPClient -> [Event.Event] -> IO ThreadId
-sendEvents client events =
-    forkIO $ do
-        events' <- withDefaults events
-        sendEvents' client events
+        let now' = if isJust $ Event.time e then Event.time e else Just now
+            host = if isJust $ Event.host e
+                   then Event.host e
+                   else toField hostname
+        in
+            e { Event.time = now', Event.host = host }

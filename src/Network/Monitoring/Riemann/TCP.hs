@@ -1,22 +1,30 @@
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+
 module Network.Monitoring.Riemann.TCP
     ( tcpClient
     , TCPClient
-    , sendMsg
     , Port
     ) where
 
+import           Control.Concurrent
 import           Control.Concurrent.MVar
 import           Control.Exception
-import           Data.Binary.Put                      as Put
-import qualified Data.ByteString.Lazy                 as BS
-import qualified Data.ByteString.Lazy.Char8           as BC
-import qualified Data.Maybe                           as Maybe
-import           Data.Text                            (Text)
-import qualified Network.Monitoring.Riemann.Proto.Msg as Msg
+import           Data.Binary.Put                        as Put
+import qualified Data.ByteString.Lazy                   as BS
+import qualified Data.ByteString.Lazy.Char8             as BC
+import qualified Data.Maybe                             as Maybe
+import qualified Data.Sequence                          as Seq
+import           Data.Text                              (Text)
+import           Network.Monitoring.Riemann.Client
+import qualified Network.Monitoring.Riemann.Event       as Event
+import qualified Network.Monitoring.Riemann.Proto.Event as PE
+import qualified Network.Monitoring.Riemann.Proto.Msg   as Msg
 import           Network.Socket
-import           Network.Socket.ByteString.Lazy       as NSB
-import           Text.ProtocolBuffers.Get             as Get
-import           Text.ProtocolBuffers.WireMessage     as WM
+import           Network.Socket.ByteString.Lazy         as NSB
+import           Text.ProtocolBuffers.Get               as Get
+import qualified Text.ProtocolBuffers.Header            as P'
+import           Text.ProtocolBuffers.WireMessage       as WM
 
 type ClientInfo = (HostName, Port, TCPStatus)
 
@@ -28,8 +36,15 @@ data TCPStatus = CnxClosed
 
 type Port = Int
 
--- | Try connecting with TCP to given host/port.
--- '''Note''': We never use IPv6 address resolved for given hostname.
+{-|
+    A new TCPClient
+
+    The TCPClient is a 'Client' that will send events asynchronously over TCP.
+
+    Current time and host name will be set if not provided.
+
+    '''Note''': We never use IPv6 address resolved for given hostname.
+-}
 tcpClient :: HostName -> Port -> IO TCPClient
 tcpClient h p = do
     connection <- doConnect h p
@@ -85,3 +100,24 @@ sendMsg client msg = do
         Left e -> do
             putMVar client (h, p, CnxClosed)
             return $ Left msg
+
+{-|
+    Send a list of Riemann events
+-}
+sendEvents' :: TCPClient -> [PE.Event] -> IO ()
+sendEvents' client events = do
+    result <- sendMsg client $
+                  P'.defaultValue { Msg.events = Seq.fromList events }
+    case result of
+        Left msg -> print $ "failed to send" ++ show msg
+        Right _  -> return ()
+
+instance Client TCPClient where
+    sendMessage = sendMsg
+    sendEvents client events = do
+        forkIO $ do
+            events <- Event.withDefaults events
+            sendEvents' client events
+        return ()
+    sendEvent client event =
+        sendEvents client [ event ]

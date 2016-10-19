@@ -15,7 +15,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Network.Monitoring.Riemann.Event
+  exposed-modules:     Network.Monitoring.Riemann.Client
+                       Network.Monitoring.Riemann.Event
                        Network.Monitoring.Riemann.TCP
   other-modules:       Network.Monitoring.Riemann.Proto.Attribute
                        Network.Monitoring.Riemann.Proto.Event
