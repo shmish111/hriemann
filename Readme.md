@@ -1,5 +1,7 @@
 # A Riemann Client for Haskell
 
+[![Build Status](https://travis-ci.org/shmish111/hriemann.svg?branch=master)](https://travis-ci.org/shmish111/hriemann)
+
 This is a Riemann client for Haskell with an API based on my experience using Riemann in a production environment.
 
 It was initially inspired by [riemann-hs](https://github.com/tel/riemann-hs) however I felt things could be a little simpler.
