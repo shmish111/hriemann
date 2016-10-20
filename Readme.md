@@ -14,10 +14,13 @@ It was initially inspired by [riemann-hs](https://github.com/tel/riemann-hs) how
 
 Please be aware that this is currently a work in progress and hasn't been well tested yet. I still have the following features to add:
 
+* Monoid instance for the Events?
 * Tests!!!
-* Optionally batch events before sending
 * Timeout if events take too long to send
-* Nicely log events to stdout if we fail to send to Riemann
+
+## Use pipes?
+
+Originally I wanted to avoid pipes as it's just another dependency and Unagi seems to be quite a bit faster, however after implementing most of the required features I can see that it would be really nice if the 'Clients' were made of individual components that compose. You would have 1 producer which is connected to `sendEvent`, consumers such as a TCP consumer and a stdout consumer as well as pipes such as batch pipe and overflow pipe.
 
 ## Usage
 

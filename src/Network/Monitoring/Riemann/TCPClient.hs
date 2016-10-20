@@ -1,6 +1,5 @@
 module Network.Monitoring.Riemann.TCPClient where
 
-import           Control.Concurrent
 import           Network.Monitoring.Riemann.Client
 import           Network.Monitoring.Riemann.Event  as Event
 import           Network.Monitoring.Riemann.TCP    as TCP
@@ -11,7 +10,7 @@ data TCPClient = TCPClient TCPConnection
 {-|
     A new TCPClient
 
-    The TCPClient is a 'Client' that will send events asynchronously over TCP.
+    The TCPClient is a 'Client' that will send single events synchronously over TCP.
 
     Current time and host name will be set if not provided.
 
@@ -23,10 +22,5 @@ tcpClient h p = do
     return $ TCPClient c
 
 instance Client TCPClient where
-    sendEvents (TCPClient connection) events = do
-        forkIO $ do
-            events <- Event.withDefaults events
-            TCP.sendEvents connection events
-        return ()
     sendEvent (TCPClient connection) event =
         TCP.sendEvents connection [ event ]

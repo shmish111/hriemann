@@ -95,11 +95,14 @@ sendMsg client msg = do
 
 {-|
     Send a list of Riemann events
+
+    Host and Time will be added if they do not exist on the Event
 -}
 sendEvents :: TCPConnection -> [PE.Event] -> IO ()
-sendEvents client events = do
-    result <- sendMsg client $
-                  P'.defaultValue { Msg.events = Seq.fromList events }
+sendEvents connection events = do
+    eventsWithDefaults <- Event.withDefaults events
+    result <- sendMsg connection $
+                  P'.defaultValue { Msg.events = Seq.fromList eventsWithDefaults }
     case result of
         Left msg -> print $ "failed to send" ++ show msg
         Right _  -> return ()
