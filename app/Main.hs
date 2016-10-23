@@ -36,3 +36,7 @@ main = do
     threadDelay 1000000
     closeBatchClient client
     putStrLn "finished"
+
+{-
+    client <- tcpClient "localhost" 5555 . batchClient 10 . overflowClient 100
+-}

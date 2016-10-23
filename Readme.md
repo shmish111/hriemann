@@ -22,7 +22,7 @@ Please be aware that this is currently a work in progress and hasn't been well t
 
 ## Use pipes?
 
-Originally I wanted to avoid pipes as it's just another dependency and Unagi seems to be quite a bit faster, however after implementing most of the required features I can see that it would be really nice if the 'Clients' were made of individual components that compose. You would have 1 producer which is connected to `sendEvent`, consumers such as a TCP consumer and a stdout consumer as well as pipes such as batch pipe and overflow pipe.
+After playing around with pipes-concurrency, it won't really provide the API I am looking for. Concurrent pipelines cannot be composed as far as I can tell.
 
 ## Usage
 
