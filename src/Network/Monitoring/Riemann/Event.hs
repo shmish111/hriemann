@@ -118,7 +118,7 @@ attribute k mv = let k' = (Basic.Utf8 . BC.pack) k
 
     This will not override any host or time in the provided event
 -}
-withDefaults :: [Event.Event] -> IO [Event.Event]
+withDefaults :: Seq Event.Event -> IO (Seq Event.Event)
 withDefaults e = do
     now <- fmap round getPOSIXTime
     hostname <- getHostName

@@ -13,3 +13,4 @@ loggingClient = LoggingClient
 
 instance Client LoggingClient where
     sendEvent client = print
+    close client = print "close"

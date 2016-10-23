@@ -98,11 +98,12 @@ sendMsg client msg = do
 
     Host and Time will be added if they do not exist on the Event
 -}
-sendEvents :: TCPConnection -> [PE.Event] -> IO ()
+sendEvents :: TCPConnection -> Seq.Seq PE.Event -> IO ()
 sendEvents connection events = do
     eventsWithDefaults <- Event.withDefaults events
+--     print $ "sending " ++ show (Seq.length events) ++ " events"
     result <- sendMsg connection $
-                  P'.defaultValue { Msg.events = Seq.fromList eventsWithDefaults }
+                  P'.defaultValue { Msg.events = eventsWithDefaults }
     case result of
         Left msg -> print $ "failed to send" ++ show msg
         Right _  -> return ()

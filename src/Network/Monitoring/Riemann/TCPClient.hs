@@ -4,6 +4,7 @@ import           Network.Monitoring.Riemann.Client
 import           Network.Monitoring.Riemann.Event  as Event
 import           Network.Monitoring.Riemann.TCP    as TCP
 import           Network.Socket
+import Data.Sequence as Seq
 
 data TCPClient = TCPClient TCPConnection
 
@@ -23,4 +24,5 @@ tcpClient h p = do
 
 instance Client TCPClient where
     sendEvent (TCPClient connection) event =
-        TCP.sendEvents connection [ event ]
+        TCP.sendEvents connection $ Seq.singleton event
+    close client = print "close"

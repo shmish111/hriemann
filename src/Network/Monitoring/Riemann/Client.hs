@@ -7,3 +7,4 @@ import qualified Network.Monitoring.Riemann.Proto.Event as Event
 -}
 class Client a where
     sendEvent :: a -> Event.Event -> IO ()
+    close :: a -> IO ()
