@@ -38,6 +38,8 @@ type Service = String
 
 type State = String
 
+type Event = Event.Event
+
 toField :: String -> Maybe Basic.Utf8
 toField string = Just $ Basic.Utf8 $ BC.pack string
 
