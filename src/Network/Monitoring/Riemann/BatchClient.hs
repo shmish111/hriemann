@@ -49,6 +49,15 @@ batchClient hostname port bufferSize batchSize overflow
           _ <- forkIO $ riemannConsumer batchSize q connection
           return $ BatchClient inChan
 
+bufferlessBatchClient :: HostName -> Port -> Int -> IO BatchClientNoBuffer
+bufferlessBatchClient hostname port batchSize
+    | batchSize <= 0 = error "Batch Size must be positive"
+    | otherwise = do
+          connection <- TCP.tcpConnection hostname port
+          q <- newQueue
+          _ <- forkIO $ riemannConsumer batchSize q connection
+          return $ BatchClientNoBuffer q
+
 overflowConsumer :: Unagi.OutChan LogCommand
                  -> Queue LogCommand
                  -> Int
