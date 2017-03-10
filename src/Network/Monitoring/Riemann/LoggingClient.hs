@@ -9,8 +9,9 @@ data LoggingClient = LoggingClient
 
     The LoggingClient is a 'Client' that will simply print events
 -}
+loggingClient :: LoggingClient
 loggingClient = LoggingClient
 
 instance Client LoggingClient where
-    sendEvent client = print
-    close client = print "close"
+    sendEvent _ = print
+    close _ = print "close"

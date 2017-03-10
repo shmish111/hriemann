@@ -1,5 +1,5 @@
 name:                hriemann
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Initial project template from stack
 description:         A Riemann Client for Haskell
 homepage:            https://github.com/shmish111/hriemann
@@ -7,16 +7,18 @@ license:             MIT
 license-file:        LICENSE
 author:              David Smith
 maintainer:          shmish111@gmail.com
-copyright:           2016 David Smith
-category:            Web
+copyright:           2017 David Smith
+category:            Monitoring
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
+  ghc-options:         -Wall -Werror
   exposed-modules:     Network.Monitoring.Riemann.Client
                        Network.Monitoring.Riemann.Event
+                       Network.Monitoring.Riemann.Event.Monoid
                        Network.Monitoring.Riemann.TCP
                        Network.Monitoring.Riemann.LoggingClient
                        Network.Monitoring.Riemann.TCPClient

@@ -5,7 +5,6 @@ import           Control.Concurrent.Chan.Unagi          as Unagi
 import           Control.Concurrent.KazuraQueue
 import           Data.Sequence                          as Seq
 import           Network.Monitoring.Riemann.Client
-import           Network.Monitoring.Riemann.Event       as Event
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import           Network.Monitoring.Riemann.TCP         as TCP
 import           Network.Socket
@@ -46,18 +45,9 @@ batchClient hostname port bufferSize batchSize overflow
           connection <- TCP.tcpConnection hostname port
           (inChan, outChan) <- Unagi.newChan
           q <- newQueue
-          forkIO $ overflowConsumer outChan q bufferSize overflow
-          forkIO $ riemannConsumer batchSize q connection
+          _ <- forkIO $ overflowConsumer outChan q bufferSize overflow
+          _ <- forkIO $ riemannConsumer batchSize q connection
           return $ BatchClient inChan
-
-bc :: HostName -> Port -> Int -> (PE.Event -> IO ()) -> IO BatchClientNoBuffer
-bc hostname port batchSize overflow
-    | batchSize <= 0 = error "Batch Size must be positive"
-    | otherwise = do
-          connection <- TCP.tcpConnection hostname port
-          q <- newQueue
-          forkIO $ riemannConsumer batchSize q connection
-          return $ BatchClientNoBuffer q
 
 overflowConsumer :: Unagi.OutChan LogCommand
                  -> Queue LogCommand
@@ -79,7 +69,7 @@ overflowConsumer outChan q bufferSize f =
                     else do
                         writeQueue q cmd
                         loop
-            Stop s -> do
+            Stop _ -> do
                 putStrLn "stopping log consumer"
                 writeQueue q cmd
 
@@ -103,8 +93,8 @@ riemannConsumer batchSize q connection =
     loop = do
         cmds <- drainAll q batchSize
         let (events', stops') = Seq.partition (\cmd -> case cmd of
-                                                   Event event -> True
-                                                   Stop s      -> False)
+                                                   Event _ -> True
+                                                   Stop _  -> False)
                                               cmds
             events = fmap (\(Event e) -> e) events'
             stops = fmap (\(Stop s) -> s) stops'

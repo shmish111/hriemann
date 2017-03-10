@@ -1,18 +1,14 @@
 module Main where
 
-import           Control.Concurrent
 import           Control.Monad                            (forM_)
 import           Data.Function
 import           Network.Monitoring.Riemann.BatchClient
 import           Network.Monitoring.Riemann.Client
 import qualified Network.Monitoring.Riemann.Event         as Event
-import           Network.Monitoring.Riemann.LoggingClient
-import           Network.Monitoring.Riemann.TCPClient
 
 main :: IO ()
 main = do
---     client <- batchClient "localhost" 5555 100 100 print
-    client <- bc "localhost" 5555 100 print
+    client <- batchClient "localhost" 5555 100 100 print
     putStrLn "doing some IO work"
     event <- pure $
                  Event.warn "my service"

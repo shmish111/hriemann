@@ -11,12 +11,11 @@ It was initially inspired by [riemann-hs](https://github.com/tel/riemann-hs) how
 * Currently this library is only for sending events, not querying
 * No UDP client
 * Async TCP sending
-* Batching and async error handling (not implemented yet)
+* Batching and async error handling
 * Deal with back pressure
 
 Please be aware that this is currently a work in progress and hasn't been well tested yet. I still have the following features to add:
 
-* Monoid instance for the Events?
 * Tests!!!
 * Timeout if events take too long to send
 
@@ -65,3 +64,20 @@ With this design you are encouraged to create an event with one of `Event.ok`, `
 This has been done because we found that it is best to avoid services like `my.service.success` and `my.service.error` (that's what the Riemann state field is for).
 
 You can use your own states using `Event.info & Event.state "trace"` however this is discouraged as it doesn't show up nicely in riemann-dash.
+
+Alternatively there is a Monoid based api for creating events:
+
+```haskell
+import Data.Monoid (Endo, (<>))
+import Network.Monitoring.Riemann.Event.Monoid
+
+
+eventA :: Endo Event
+eventA = ttl 10 <> metric (1 :: Int) <> attributes [attribute "something" Nothing]
+
+eventB :: Endo Event
+eventB = tags ["tag 1"]
+
+compositeEvent :: Event
+compositeEvent = ok "some service" (eventA <> eventB)
+```

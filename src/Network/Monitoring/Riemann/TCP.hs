@@ -10,20 +10,16 @@ module Network.Monitoring.Riemann.TCP
     ) where
 
 import           Control.Concurrent
-import           Control.Concurrent.MVar
-import           Control.Exception
 import           Data.Binary.Put                        as Put
 import qualified Data.ByteString.Lazy                   as BS
 import qualified Data.ByteString.Lazy.Char8             as BC
 import qualified Data.Maybe                             as Maybe
 import qualified Data.Sequence                          as Seq
-import           Data.Text                              (Text)
 import qualified Network.Monitoring.Riemann.Event       as Event
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Network.Monitoring.Riemann.Proto.Msg   as Msg
 import           Network.Socket
 import           Network.Socket.ByteString.Lazy         as NSB
-import           Text.ProtocolBuffers.Get               as Get
 import qualified Text.ProtocolBuffers.Header            as P'
 import           Text.ProtocolBuffers.WireMessage       as WM
 
@@ -43,13 +39,10 @@ tcpConnection h p = do
     newMVar (h, p, CnxOpen connection)
 
 getConnection :: ClientInfo -> IO (Socket, AddrInfo)
-getConnection (h, p, CnxOpen (s, a)) =
+getConnection (_, _, CnxOpen (s, a)) =
     return (s, a)
 getConnection (h, p, CnxClosed) =
     doConnect h p
-
-tcpv4 :: AddrInfo -> Bool
-tcpv4 addr = addrSocketType addr == Stream && addrFamily addr == AF_INET
 
 doConnect :: HostName -> Port -> IO (Socket, AddrInfo)
 doConnect hn po = do
@@ -57,7 +50,7 @@ doConnect hn po = do
                               defaultHints { addrFlags = [ AI_NUMERICSERV ] })
                          (Just hn)
                          (Just $ show po)
-    case filter tcpv4 addrs of
+    case addrs of
         [] -> fail ("No accessible addresses in " ++ show addrs)
         (addy : _) -> do
             s <- socket AF_INET Stream defaultProtocol
@@ -80,8 +73,8 @@ decodeMsg bs = let result = messageGet (BS.drop 4 bs)
 
 sendMsg :: TCPConnection -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
 sendMsg client msg = do
-    clientInfo@(h, p, state) <- takeMVar client
-    (s, a) <- getConnection clientInfo
+    clientInfo@(h, p, _) <- takeMVar client
+    (s, _) <- getConnection clientInfo
     sendAll s $ msgToByteString msg
     bs <- NSB.recv s 4096
     result <- pure $ decodeMsg bs
@@ -89,7 +82,7 @@ sendMsg client msg = do
         Right m -> do
             putMVar client clientInfo
             return $ Right m
-        Left e -> do
+        Left _ -> do
             putMVar client (h, p, CnxClosed)
             return $ Left msg
 
@@ -101,9 +94,9 @@ sendMsg client msg = do
 sendEvents :: TCPConnection -> Seq.Seq PE.Event -> IO ()
 sendEvents connection events = do
     eventsWithDefaults <- Event.withDefaults events
---     print $ "sending " ++ show (Seq.length events) ++ " events"
+    --     print $ "sending " ++ show (Seq.length events) ++ " events"
     result <- sendMsg connection $
                   P'.defaultValue { Msg.events = eventsWithDefaults }
     case result of
         Left msg -> print $ "failed to send" ++ show msg
-        Right _  -> return ()
+        Right _ -> return ()
