@@ -6,9 +6,10 @@ import           Network.HostName                           (getHostName)
 import           Network.Monitoring.Riemann.Event           (Service)
 import qualified Network.Monitoring.Riemann.Event           as E
 import           Network.Monitoring.Riemann.Proto.Attribute (Attribute)
-import           Network.Monitoring.Riemann.Proto.Event     (Event)
 import qualified Network.Monitoring.Riemann.Proto.Event     as PE
 import           Text.ProtocolBuffers.Basic                 (Int64)
+
+type Event = PE.Event
 
 append :: a -> Endo a -> a
 append = flip appEndo

@@ -29,7 +29,6 @@ import           Data.Sequence
 import           Data.Time.Clock.POSIX
 import           Network.HostName
 import qualified Network.Monitoring.Riemann.Proto.Attribute as Attribute
-import           Network.Monitoring.Riemann.Proto.Event     (Event)
 import qualified Network.Monitoring.Riemann.Proto.Event     as E
 import           Text.ProtocolBuffers.Basic                 as Basic
 import qualified Text.ProtocolBuffers.Header                as P'
@@ -37,6 +36,8 @@ import qualified Text.ProtocolBuffers.Header                as P'
 type Service = String
 
 type State = String
+
+type Event = E.Event
 
 emptyEvent :: Event
 emptyEvent = P'.defaultValue
