@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# OPTIONS_GHC  -fno-warn-orphans #-}
 module Network.Monitoring.Riemann.Json where
 
@@ -8,8 +9,12 @@ import           Data.Aeson                                 (FromJSON, ToJSON,
                                                              Value (String),
                                                              parseJSON, toJSON,
                                                              withObject, (.!=),
-                                                             (.:), (.:?))
-import           Data.Aeson.Types                           (typeMismatch)
+                                                             (.:?))
+import           Data.Aeson.Types                           (Parser,
+                                                             typeMismatch)
+import           Data.Scientific                            (Scientific,
+                                                             toBoundedInteger,
+                                                             toBoundedRealFloat)
 import qualified Data.Text                                  as Text
 import           Network.Monitoring.Riemann.Proto.Attribute as PA
 import           Network.Monitoring.Riemann.Proto.Event     as PE
@@ -29,15 +34,36 @@ instance FromJSON PA.Attribute
 instance ToJSON PE.Event
 
 instance FromJSON PE.Event where
-  parseJSON = withObject "Event" $ \v -> Event
-    <$> v .: "time"
-    <*> v .: "state"
-    <*> v .: "service"
-    <*> v .: "host"
-    <*> v .: "description"
-    <*> (v .:? "tags" .!= [])
-    <*> v .: "ttl"
-    <*> v .: "attributes"
-    <*> v .: "metric_sint64"
-    <*> v .: "metric_d"
-    <*> v .: "metric_f"
+  parseJSON = withObject "Event" $ \v -> do
+    time <- v .:? "time"
+    state <- v .:? "state"
+    service <- v .:? "service"
+    host <- v .:? "host"
+    description <- v .:? "description"
+    tags <- v .:? "tags" .!= []
+    ttl <- v .:? "ttl"
+    attributes <- v .:? "attributes" .!= []
+    mMetric_sint64 <- v .:? "metric_sint64"
+    mMetric_d <- v .:? "metric_d"
+    mMetric_f <- v .:? "metric_f"
+    mMetric <- v .:? "metric" :: Parser (Maybe Scientific)
+    let metric_sint64 = case mMetric_sint64 of
+          Nothing -> do
+            s <- mMetric
+            toBoundedInteger s
+          i -> i
+    let metric_d = case mMetric_d of
+          Nothing -> do
+            s <- mMetric
+            rightToJust $ toBoundedRealFloat s
+          d -> d
+    let metric_f = case mMetric_f of
+          Nothing -> do
+            s <- mMetric
+            rightToJust $ toBoundedRealFloat s
+          d -> d
+    pure Event { .. }
+
+rightToJust :: Either l r -> Maybe r
+rightToJust (Left _)  = Nothing
+rightToJust (Right v) = Just v

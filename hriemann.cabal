@@ -35,6 +35,7 @@ library
                      , protocol-buffers-descriptor
                      , bytestring
                      , network
+                     , scientific
                      , text
                      , containers
                      , binary
