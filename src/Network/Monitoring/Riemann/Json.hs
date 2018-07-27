@@ -1,10 +1,14 @@
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# OPTIONS_GHC  -fno-warn-orphans #-}
 module Network.Monitoring.Riemann.Json where
 
 import           Data.Aeson                                 (FromJSON, ToJSON,
                                                              Value (String),
-                                                             parseJSON, toJSON)
+                                                             parseJSON, toJSON,
+                                                             withObject, (.!=),
+                                                             (.:), (.:?))
 import           Data.Aeson.Types                           (typeMismatch)
 import qualified Data.Text                                  as Text
 import           Network.Monitoring.Riemann.Proto.Attribute as PA
@@ -24,4 +28,16 @@ instance FromJSON PA.Attribute
 
 instance ToJSON PE.Event
 
-instance FromJSON PE.Event
+instance FromJSON PE.Event where
+  parseJSON = withObject "Event" $ \v -> Event
+    <$> v .: "time"
+    <*> v .: "state"
+    <*> v .: "service"
+    <*> v .: "host"
+    <*> v .: "description"
+    <*> (v .:? "tags" .!= [])
+    <*> v .: "ttl"
+    <*> v .: "attributes"
+    <*> v .: "metric_sint64"
+    <*> v .: "metric_d"
+    <*> v .: "metric_f"
