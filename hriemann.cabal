@@ -19,6 +19,7 @@ library
   exposed-modules:     Network.Monitoring.Riemann.Client
                        Network.Monitoring.Riemann.Event
                        Network.Monitoring.Riemann.Event.Monoid
+                       Network.Monitoring.Riemann.Json
                        Network.Monitoring.Riemann.TCP
                        Network.Monitoring.Riemann.LoggingClient
                        Network.Monitoring.Riemann.TCPClient
@@ -29,6 +30,7 @@ library
                        Network.Monitoring.Riemann.Proto.Query
                        Network.Monitoring.Riemann.Proto.State
   build-depends:       base >= 4.7 && < 5
+                     , aeson
                      , protocol-buffers
                      , protocol-buffers-descriptor
                      , bytestring
