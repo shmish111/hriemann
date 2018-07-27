@@ -8,12 +8,10 @@ module Network.Monitoring.Riemann.Json where
 import           Data.Aeson                                 (FromJSON, ToJSON,
                                                              Value (String),
                                                              parseJSON, toJSON,
-                                                             withObject, (.!=),
+                                                             withObject,
+                                                             withText, (.!=),
                                                              (.:?))
-import           Data.Aeson.Types                           (Parser,
-                                                             typeMismatch)
-import           Data.Scientific                            (Scientific,
-                                                             toBoundedInteger,
+import           Data.Scientific                            (toBoundedInteger,
                                                              toBoundedRealFloat)
 import qualified Data.Text                                  as Text
 import           Network.Monitoring.Riemann.Proto.Attribute as PA
@@ -24,8 +22,7 @@ instance ToJSON P'.Utf8 where
   toJSON v = String (Text.pack (P'.uToString v))
 
 instance FromJSON P'.Utf8 where
-  parseJSON (String s) = pure. P'.uFromString . Text.unpack $ s
-  parseJSON invalid    = typeMismatch "non-Utf8 String" invalid
+  parseJSON = withText "Utf8 String" $ pure . P'.uFromString . Text.unpack
 
 instance ToJSON PA.Attribute
 
@@ -46,7 +43,7 @@ instance FromJSON PE.Event where
     mMetric_sint64 <- v .:? "metric_sint64"
     mMetric_d <- v .:? "metric_d"
     mMetric_f <- v .:? "metric_f"
-    mMetric <- v .:? "metric" :: Parser (Maybe Scientific)
+    mMetric <- v .:? "metric"
     let metric_sint64 = case mMetric_sint64 of
           Nothing -> do
             s <- mMetric
