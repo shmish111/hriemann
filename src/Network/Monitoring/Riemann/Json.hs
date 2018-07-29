@@ -5,6 +5,7 @@
 {-# OPTIONS_GHC  -fno-warn-orphans #-}
 module Network.Monitoring.Riemann.Json where
 
+import Control.Applicative ((<|>))
 import           Data.Aeson                                 (FromJSON, ToJSON,
                                                              Value (String),
                                                              parseJSON, toJSON,
@@ -44,21 +45,9 @@ instance FromJSON PE.Event where
     mMetric_d <- v .:? "metric_d"
     mMetric_f <- v .:? "metric_f"
     mMetric <- v .:? "metric"
-    let metric_sint64 = case mMetric_sint64 of
-          Nothing -> do
-            s <- mMetric
-            toBoundedInteger s
-          i -> i
-    let metric_d = case mMetric_d of
-          Nothing -> do
-            s <- mMetric
-            rightToJust $ toBoundedRealFloat s
-          d -> d
-    let metric_f = case mMetric_f of
-          Nothing -> do
-            s <- mMetric
-            rightToJust $ toBoundedRealFloat s
-          d -> d
+    let metric_sint64 = mMetric_sint64 <|> (toBoundedInteger =<< mMetric)
+        metric_d = mMetric_d <|> (rightToJust . toBoundedRealFloat =<< mMetric)
+        metric_f = mMetric_f <|> (rightToJust . toBoundedRealFloat =<< mMetric)
     pure Event { .. }
 
 rightToJust :: Either l r -> Maybe r
