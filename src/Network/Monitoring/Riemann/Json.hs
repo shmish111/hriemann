@@ -5,7 +5,7 @@
 {-# OPTIONS_GHC  -fno-warn-orphans #-}
 module Network.Monitoring.Riemann.Json where
 
-import Control.Applicative ((<|>))
+import           Control.Applicative                        ((<|>))
 import           Data.Aeson                                 (FromJSON, ToJSON,
                                                              Value (String),
                                                              parseJSON, toJSON,
