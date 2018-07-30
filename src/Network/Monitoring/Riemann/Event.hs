@@ -28,6 +28,7 @@ import           Data.Monoid                                ((<>))
 import           Data.Sequence
 import           Data.Time.Clock.POSIX
 import           Network.HostName
+import           Network.Monitoring.Riemann.Json            ()
 import qualified Network.Monitoring.Riemann.Proto.Attribute as Attribute
 import qualified Network.Monitoring.Riemann.Proto.Event     as E
 import           Text.ProtocolBuffers.Basic                 as Basic
