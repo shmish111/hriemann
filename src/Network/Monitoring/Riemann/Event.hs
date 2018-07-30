@@ -32,6 +32,7 @@ import qualified Network.Monitoring.Riemann.Proto.Attribute as Attribute
 import qualified Network.Monitoring.Riemann.Proto.Event     as E
 import           Text.ProtocolBuffers.Basic                 as Basic
 import qualified Text.ProtocolBuffers.Header                as P'
+import Network.Monitoring.Riemann.Json ()
 
 type Service = String
 
