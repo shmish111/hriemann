@@ -14,7 +14,7 @@ import qualified Prelude as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 
 data Attribute = Attribute
-  { key :: !(P'.Utf8)
+  { key :: !P'.Utf8
   , value :: !(P'.Maybe P'.Utf8)
   } deriving ( Prelude'.Show
              , Prelude'.Eq
@@ -38,7 +38,7 @@ instance P'.Wire Attribute where
       11 -> P'.prependMessageSize calc'Size
       _ -> P'.wireSizeErr ft' self'
     where
-      calc'Size = (P'.wireSizeReq 1 9 x'1 + P'.wireSizeOpt 1 9 x'2)
+      calc'Size = P'.wireSizeReq 1 9 x'1 + P'.wireSizeOpt 1 9 x'2
   wirePut ft' self'@(Attribute x'1 x'2) =
     case ft' of
       10 -> put'Fields

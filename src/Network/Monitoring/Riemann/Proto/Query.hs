@@ -13,8 +13,8 @@ import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 
-data Query = Query
-  { string :: !(P'.Maybe P'.Utf8)
+newtype Query = Query
+  { string :: P'.Maybe P'.Utf8
   } deriving ( Prelude'.Show
              , Prelude'.Eq
              , Prelude'.Ord
@@ -36,7 +36,7 @@ instance P'.Wire Query where
       11 -> P'.prependMessageSize calc'Size
       _ -> P'.wireSizeErr ft' self'
     where
-      calc'Size = (P'.wireSizeOpt 1 9 x'1)
+      calc'Size = P'.wireSizeOpt 1 9 x'1
   wirePut ft' self'@(Query x'1) =
     case ft' of
       10 -> put'Fields
@@ -45,8 +45,7 @@ instance P'.Wire Query where
         put'Fields
       _ -> P'.wirePutErr ft' self'
     where
-      put'Fields = do
-        P'.wirePutOpt 10 9 x'1
+      put'Fields = P'.wirePutOpt 10 9 x'1
   wireGet ft' =
     case ft' of
       10 -> P'.getBareMessageWith update'Self
@@ -80,8 +79,7 @@ instance P'.TextType Query where
   getT = P'.getSubMessage
 
 instance P'.TextMsg Query where
-  textPut msg = do
-    P'.tellT "string" (string msg)
+  textPut msg = P'.tellT "string" (string msg)
   textGet = do
     mods <- P'.sepEndBy (P'.choice [parse'string]) P'.spaces
     Prelude'.return (Prelude'.foldl (\v f -> f v) P'.defaultValue mods)

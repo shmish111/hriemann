@@ -56,10 +56,10 @@ instance P'.Wire Msg where
       _ -> P'.wireSizeErr ft' self'
     where
       calc'Size =
-        (P'.wireSizeOpt 1 8 x'1 + P'.wireSizeOpt 1 9 x'2 +
-         P'.wireSizeRep 1 11 x'3 +
-         P'.wireSizeOpt 1 11 x'4 +
-         P'.wireSizeRep 1 11 x'5)
+        P'.wireSizeOpt 1 8 x'1 + P'.wireSizeOpt 1 9 x'2 +
+        P'.wireSizeRep 1 11 x'3 +
+        P'.wireSizeOpt 1 11 x'4 +
+        P'.wireSizeRep 1 11 x'5
   wirePut ft' self'@(Msg x'1 x'2 x'3 x'4 x'5) =
     case ft' of
       10 -> put'Fields

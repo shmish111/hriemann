@@ -125,7 +125,7 @@ withDefaults :: Seq Event -> IO (Seq Event)
 withDefaults e = do
   now <- fmap round getPOSIXTime
   hostname <- getHostName
-  return $ fmap (addTimeAndHost now hostname) e
+  pure $ addTimeAndHost now hostname <$> e
 
 addTimeAndHost :: Int64 -> String -> Event -> Event
 addTimeAndHost now hostname e

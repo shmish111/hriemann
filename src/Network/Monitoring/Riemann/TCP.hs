@@ -40,7 +40,7 @@ tcpConnection h p = do
   newMVar (h, p, CnxOpen connection)
 
 getConnection :: ClientInfo -> IO (Socket, AddrInfo)
-getConnection (_, _, CnxOpen (s, a)) = return (s, a)
+getConnection (_, _, CnxOpen (s, a)) = pure (s, a)
 getConnection (h, p, CnxClosed) = doConnect h p
 
 doConnect :: HostName -> Port -> IO (Socket, AddrInfo)
@@ -55,7 +55,7 @@ doConnect hn po = do
     (addy:_) -> do
       s <- socket AF_INET Stream defaultProtocol
       connect s (addrAddress addy)
-      return (s, addy)
+      pure (s, addy)
 
 msgToByteString :: Msg.Msg -> BC.ByteString
 msgToByteString msg =
@@ -79,14 +79,13 @@ sendMsg client msg = do
   (s, _) <- getConnection clientInfo
   sendAll s $ msgToByteString msg
   bs <- NSB.recv s 4096
-  result <- pure $ decodeMsg bs
-  case result of
+  case decodeMsg bs of
     Right m -> do
       putMVar client clientInfo
-      return $ Right m
+      pure $ Right m
     Left _ -> do
       putMVar client (h, p, CnxClosed)
-      return $ Left msg
+      pure $ Left msg
 
 {-|
     Send a list of Riemann events
@@ -101,4 +100,4 @@ sendEvents connection events = do
     sendMsg connection $ P'.defaultValue {Msg.events = eventsWithDefaults}
   case result of
     Left msg -> print $ "failed to send" ++ show msg
-    Right _ -> return ()
+    Right _ -> pure ()

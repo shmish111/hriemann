@@ -5,7 +5,7 @@ import Network.Monitoring.Riemann.Client
 import Network.Monitoring.Riemann.TCP as TCP
 import Network.Socket
 
-data TCPClient =
+newtype TCPClient =
   TCPClient TCPConnection
 
 {-|
@@ -20,7 +20,7 @@ data TCPClient =
 tcpClient :: HostName -> Port -> IO TCPClient
 tcpClient h p = do
   c <- TCP.tcpConnection h p
-  return $ TCPClient c
+  pure $ TCPClient c
 
 instance Client TCPClient where
   sendEvent (TCPClient connection) event =

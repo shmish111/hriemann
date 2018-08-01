@@ -72,16 +72,15 @@ instance P'.Wire Event where
       _ -> P'.wireSizeErr ft' self'
     where
       calc'Size =
-        (P'.wireSizeOpt 1 3 x'1 + P'.wireSizeOpt 1 9 x'2 +
-         P'.wireSizeOpt 1 9 x'3 +
-         P'.wireSizeOpt 1 9 x'4 +
-         P'.wireSizeOpt 1 9 x'5 +
-         P'.wireSizeRep 1 9 x'6 +
-         P'.wireSizeOpt 1 2 x'7 +
-         P'.wireSizeRep 1 11 x'8 +
-         P'.wireSizeOpt 1 18 x'9 +
-         P'.wireSizeOpt 1 1 x'10 +
-         P'.wireSizeOpt 1 2 x'11)
+        P'.wireSizeOpt 1 3 x'1 + P'.wireSizeOpt 1 9 x'2 + P'.wireSizeOpt 1 9 x'3 +
+        P'.wireSizeOpt 1 9 x'4 +
+        P'.wireSizeOpt 1 9 x'5 +
+        P'.wireSizeRep 1 9 x'6 +
+        P'.wireSizeOpt 1 2 x'7 +
+        P'.wireSizeRep 1 11 x'8 +
+        P'.wireSizeOpt 1 18 x'9 +
+        P'.wireSizeOpt 1 1 x'10 +
+        P'.wireSizeOpt 1 2 x'11
   wirePut ft' self'@(Event x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8 x'9 x'10 x'11) =
     case ft' of
       10 -> put'Fields

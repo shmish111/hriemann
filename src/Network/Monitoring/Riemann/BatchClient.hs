@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Network.Monitoring.Riemann.BatchClient where
 
 import Control.Concurrent
@@ -9,10 +11,10 @@ import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import Network.Monitoring.Riemann.TCP as TCP
 import Network.Socket
 
-data BatchClient =
+newtype BatchClient =
   BatchClient (Unagi.InChan LogCommand)
 
-data BatchClientNoBuffer =
+newtype BatchClientNoBuffer =
   BatchClientNoBuffer (Queue LogCommand)
 
 data LogCommand
@@ -46,7 +48,7 @@ batchClient hostname port bufferSize batchSize overflow
     q <- newQueue
     _ <- forkIO $ overflowConsumer outChan q bufferSize overflow
     _ <- forkIO $ riemannConsumer batchSize q connection
-    return $ BatchClient inChan
+    pure $ BatchClient inChan
 
 bufferlessBatchClient :: HostName -> Port -> Int -> IO BatchClientNoBuffer
 bufferlessBatchClient hostname port batchSize
@@ -55,7 +57,7 @@ bufferlessBatchClient hostname port batchSize
     connection <- TCP.tcpConnection hostname port
     q <- newQueue
     _ <- forkIO $ riemannConsumer batchSize q connection
-    return $ BatchClientNoBuffer q
+    pure $ BatchClientNoBuffer q
 
 overflowConsumer ::
      Unagi.OutChan LogCommand
@@ -88,12 +90,12 @@ drainAll q n = do
   where
     loop msgs =
       if Seq.length msgs >= n
-        then return msgs
+        then pure msgs
         else do
           msg <- tryReadQueue q
           case msg of
             Just m -> loop $ msgs |> m
-            Nothing -> return msgs
+            Nothing -> pure msgs
 
 riemannConsumer :: Int -> Queue LogCommand -> TCPConnection -> IO ()
 riemannConsumer batchSize q connection = loop
@@ -102,10 +104,9 @@ riemannConsumer batchSize q connection = loop
       cmds <- drainAll q batchSize
       let (events', stops') =
             Seq.partition
-              (\cmd ->
-                 case cmd of
-                   Event _ -> True
-                   Stop _ -> False)
+              (\case
+                 Event _ -> True
+                 Stop _ -> False)
               cmds
           events = fmap (\(Event e) -> e) events'
           stops = fmap (\(Stop s) -> s) stops'

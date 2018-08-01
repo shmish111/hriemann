@@ -62,13 +62,12 @@ instance P'.Wire State where
       _ -> P'.wireSizeErr ft' self'
     where
       calc'Size =
-        (P'.wireSizeOpt 1 3 x'1 + P'.wireSizeOpt 1 9 x'2 +
-         P'.wireSizeOpt 1 9 x'3 +
-         P'.wireSizeOpt 1 9 x'4 +
-         P'.wireSizeOpt 1 9 x'5 +
-         P'.wireSizeOpt 1 8 x'6 +
-         P'.wireSizeRep 1 9 x'7 +
-         P'.wireSizeOpt 1 2 x'8)
+        P'.wireSizeOpt 1 3 x'1 + P'.wireSizeOpt 1 9 x'2 + P'.wireSizeOpt 1 9 x'3 +
+        P'.wireSizeOpt 1 9 x'4 +
+        P'.wireSizeOpt 1 9 x'5 +
+        P'.wireSizeOpt 1 8 x'6 +
+        P'.wireSizeRep 1 9 x'7 +
+        P'.wireSizeOpt 1 2 x'8
   wirePut ft' self'@(State x'1 x'2 x'3 x'4 x'5 x'6 x'7 x'8) =
     case ft' of
       10 -> put'Fields

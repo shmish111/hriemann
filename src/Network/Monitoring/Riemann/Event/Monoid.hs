@@ -43,9 +43,9 @@ tags = Endo . E.tags
 
 timeAndHost :: IO (Endo Event)
 timeAndHost = do
-  now <- fmap round getPOSIXTime
+  now <- round <$> getPOSIXTime
   hostname <- getHostName
-  return $ Endo $ E.addTimeAndHost now hostname
+  pure . Endo $ E.addTimeAndHost now hostname
 
 attribute :: String -> Maybe String -> Attribute
 attribute = E.attribute
