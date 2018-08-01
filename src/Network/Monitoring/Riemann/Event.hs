@@ -22,17 +22,17 @@ You can use your own states using @E.info & E.state "trace"@ however this is dis
 -}
 module Network.Monitoring.Riemann.Event where
 
-import qualified Data.ByteString.Lazy.Char8                 as BC
-import           Data.Maybe
-import           Data.Monoid                                ((<>))
-import           Data.Sequence
-import           Data.Time.Clock.POSIX
-import           Network.HostName
-import           Network.Monitoring.Riemann.Json            ()
+import qualified Data.ByteString.Lazy.Char8 as BC
+import Data.Maybe
+import Data.Monoid ((<>))
+import Data.Sequence
+import Data.Time.Clock.POSIX
+import Network.HostName
+import Network.Monitoring.Riemann.Json ()
 import qualified Network.Monitoring.Riemann.Proto.Attribute as Attribute
-import qualified Network.Monitoring.Riemann.Proto.Event     as E
-import           Text.ProtocolBuffers.Basic                 as Basic
-import qualified Text.ProtocolBuffers.Header                as P'
+import qualified Network.Monitoring.Riemann.Proto.Event as E
+import Text.ProtocolBuffers.Basic as Basic
+import qualified Text.ProtocolBuffers.Header as P'
 
 type Service = String
 
@@ -47,10 +47,10 @@ toField :: String -> Maybe Basic.Utf8
 toField string = Just $ Basic.Utf8 $ BC.pack string
 
 info :: Service -> Event
-info service = P'.defaultValue { E.service = toField service }
+info service = P'.defaultValue {E.service = toField service}
 
 state :: State -> Event -> Event
-state s e = e { E.state = toField s }
+state s e = e {E.state = toField s}
 
 ok :: Service -> Event
 ok service = state "ok" $ info service
@@ -62,25 +62,25 @@ failure :: Service -> Event
 failure service = state "failure" $ info service
 
 description :: String -> Event -> Event
-description d e = e { E.description = toField d }
+description d e = e {E.description = toField d}
 
 class Metric a where
-    setMetric :: a -> Event -> Event
+  setMetric :: a -> Event -> Event
 
 instance Metric Int where
-    setMetric m e = e { E.metric_sint64 = Just $ fromIntegral m }
+  setMetric m e = e {E.metric_sint64 = Just $ fromIntegral m}
 
 instance Metric Integer where
-    setMetric m e = e { E.metric_sint64 = Just $ fromIntegral m }
+  setMetric m e = e {E.metric_sint64 = Just $ fromIntegral m}
 
 instance Metric Int64 where
-    setMetric m e = e { E.metric_sint64 = Just m }
+  setMetric m e = e {E.metric_sint64 = Just m}
 
 instance Metric Double where
-    setMetric m e = e { E.metric_d = Just m }
+  setMetric m e = e {E.metric_d = Just m}
 
 instance Metric Float where
-    setMetric m e = e { E.metric_f = Just m }
+  setMetric m e = e {E.metric_f = Just m}
 
 {-|
     Note that since Riemann's protocol has separate types for integers, floats and doubles, you need to specify which
@@ -100,23 +100,21 @@ metric :: (Metric a) => a -> Event -> Event
 metric = setMetric
 
 ttl :: Float -> Event -> Event
-ttl t e = e { E.ttl = Just t }
+ttl t e = e {E.ttl = Just t}
 
 tags :: [String] -> Event -> Event
-tags ts e = let tags' = fromList $ fmap (Basic.Utf8 . BC.pack) ts
-            in
-                e { E.tags = tags' <> E.tags e }
+tags ts e =
+  let tags' = fromList $ fmap (Basic.Utf8 . BC.pack) ts
+   in e {E.tags = tags' <> E.tags e}
 
 attributes :: [Attribute.Attribute] -> Event -> Event
-attributes as e = e { E.attributes = fromList as <> E.attributes e }
+attributes as e = e {E.attributes = fromList as <> E.attributes e}
 
 attribute :: String -> Maybe String -> Attribute.Attribute
-attribute k mv = let k' = (Basic.Utf8 . BC.pack) k
-                     mv' = fmap (Basic.Utf8 . BC.pack) mv
-                 in
-                     P'.defaultValue { Attribute.key = k'
-                                     , Attribute.value = mv'
-                                     }
+attribute k mv =
+  let k' = (Basic.Utf8 . BC.pack) k
+      mv' = fmap (Basic.Utf8 . BC.pack) mv
+   in P'.defaultValue {Attribute.key = k', Attribute.value = mv'}
 
 {-|
     Add local hostname and current time to an Event
@@ -125,14 +123,13 @@ attribute k mv = let k' = (Basic.Utf8 . BC.pack) k
 -}
 withDefaults :: Seq Event -> IO (Seq Event)
 withDefaults e = do
-    now <- fmap round getPOSIXTime
-    hostname <- getHostName
-    return $ fmap (addTimeAndHost now hostname) e
+  now <- fmap round getPOSIXTime
+  hostname <- getHostName
+  return $ fmap (addTimeAndHost now hostname) e
 
 addTimeAndHost :: Int64 -> String -> Event -> Event
 addTimeAndHost now hostname e
-    | isJust (E.time e) && isJust (E.host e) =
-          e
-    | isJust (E.time e) = e { E.host = toField hostname }
-    | isJust (E.host e) = e { E.time = Just now }
-    | otherwise = e { E.time = Just now, E.host = toField hostname }
+  | isJust (E.time e) && isJust (E.host e) = e
+  | isJust (E.time e) = e {E.host = toField hostname}
+  | isJust (E.host e) = e {E.time = Just now}
+  | otherwise = e {E.time = Just now, E.host = toField hostname}
