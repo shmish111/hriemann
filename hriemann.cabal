@@ -1,6 +1,6 @@
 name:                hriemann
 version:             0.3.1.0
-synopsis:            Initial project template from stack
+synopsis:            A Riemann Client for Haskell
 description:         A Riemann Client for Haskell
 homepage:            https://github.com/shmish111/hriemann
 license:             MIT
