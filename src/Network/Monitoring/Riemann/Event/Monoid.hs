@@ -1,6 +1,6 @@
 module Network.Monitoring.Riemann.Event.Monoid where
 
-import Data.Monoid (Endo(..), appEndo)
+import Data.Monoid (Endo(Endo), appEndo)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Network.HostName (getHostName)
 import Network.Monitoring.Riemann.Event (Service)

@@ -23,15 +23,15 @@ You can use your own states using @E.info & E.state "trace"@ however this is dis
 module Network.Monitoring.Riemann.Event where
 
 import qualified Data.ByteString.Lazy.Char8 as BC
-import Data.Maybe
+import Data.Maybe (isJust)
 import Data.Monoid ((<>))
-import Data.Sequence
-import Data.Time.Clock.POSIX
-import Network.HostName
+import Data.Sequence (Seq, fromList)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import Network.HostName (getHostName)
 import Network.Monitoring.Riemann.Json ()
 import qualified Network.Monitoring.Riemann.Proto.Attribute as Attribute
 import qualified Network.Monitoring.Riemann.Proto.Event as E
-import Text.ProtocolBuffers.Basic as Basic
+import qualified Text.ProtocolBuffers.Basic as Basic
 import qualified Text.ProtocolBuffers.Header as P'
 
 type Service = String
@@ -73,7 +73,7 @@ instance Metric Int where
 instance Metric Integer where
   setMetric m e = e {E.metric_sint64 = Just $ fromIntegral m}
 
-instance Metric Int64 where
+instance Metric P'.Int64 where
   setMetric m e = e {E.metric_sint64 = Just m}
 
 instance Metric Double where
@@ -127,7 +127,7 @@ withDefaults e = do
   hostname <- getHostName
   pure $ addTimeAndHost now hostname <$> e
 
-addTimeAndHost :: Int64 -> String -> Event -> Event
+addTimeAndHost :: P'.Int64 -> String -> Event -> Event
 addTimeAndHost now hostname e
   | isJust (E.time e) && isJust (E.host e) = e
   | isJust (E.time e) = e {E.host = toField hostname}

@@ -2,14 +2,22 @@
 
 module Network.Monitoring.Riemann.BatchClient where
 
-import Control.Concurrent
-import Control.Concurrent.Chan.Unagi as Unagi
+import Control.Concurrent (MVar, forkIO, newEmptyMVar, putMVar, takeMVar)
+import qualified Control.Concurrent.Chan.Unagi as Unagi
 import Control.Concurrent.KazuraQueue
-import Data.Sequence as Seq
-import Network.Monitoring.Riemann.Client
+  ( Queue
+  , lengthQueue
+  , newQueue
+  , readQueue
+  , tryReadQueue
+  , writeQueue
+  )
+import qualified Data.Sequence as Seq
+import Data.Sequence (Seq, (|>), singleton)
+import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
-import Network.Monitoring.Riemann.TCP as TCP
-import Network.Socket
+import qualified Network.Monitoring.Riemann.TCP as TCP
+import Network.Socket (HostName)
 
 newtype BatchClient =
   BatchClient (Unagi.InChan LogCommand)
@@ -39,7 +47,7 @@ data LogCommand
     '''Note''': We never use IPv6 address resolved for given hostname.
 -}
 batchClient ::
-     HostName -> Port -> Int -> Int -> (PE.Event -> IO ()) -> IO BatchClient
+     HostName -> TCP.Port -> Int -> Int -> (PE.Event -> IO ()) -> IO BatchClient
 batchClient hostname port bufferSize batchSize overflow
   | batchSize <= 0 = error "Batch Size must be positive"
   | otherwise = do
@@ -50,7 +58,7 @@ batchClient hostname port bufferSize batchSize overflow
     _ <- forkIO $ riemannConsumer batchSize q connection
     pure $ BatchClient inChan
 
-bufferlessBatchClient :: HostName -> Port -> Int -> IO BatchClientNoBuffer
+bufferlessBatchClient :: HostName -> TCP.Port -> Int -> IO BatchClientNoBuffer
 bufferlessBatchClient hostname port batchSize
   | batchSize <= 0 = error "Batch Size must be positive"
   | otherwise = do
@@ -97,7 +105,7 @@ drainAll q n = do
             Just m -> loop $ msgs |> m
             Nothing -> pure msgs
 
-riemannConsumer :: Int -> Queue LogCommand -> TCPConnection -> IO ()
+riemannConsumer :: Int -> Queue LogCommand -> TCP.TCPConnection -> IO ()
 riemannConsumer batchSize q connection = loop
   where
     loop = do

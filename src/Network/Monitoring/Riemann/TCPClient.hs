@@ -1,9 +1,10 @@
 module Network.Monitoring.Riemann.TCPClient where
 
-import Data.Sequence as Seq
-import Network.Monitoring.Riemann.Client
-import Network.Monitoring.Riemann.TCP as TCP
-import Network.Socket
+import qualified Data.Sequence as Seq
+import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
+import qualified Network.Monitoring.Riemann.TCP as TCP
+import Network.Monitoring.Riemann.TCP (Port, TCPConnection)
+import Network.Socket (HostName)
 
 newtype TCPClient =
   TCPClient TCPConnection

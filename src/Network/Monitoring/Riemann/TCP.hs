@@ -9,19 +9,33 @@ module Network.Monitoring.Riemann.TCP
   , Port
   ) where
 
-import Control.Concurrent
-import Data.Binary.Put as Put
+import Control.Concurrent (MVar, newMVar, putMVar, takeMVar)
+import qualified Data.Binary.Put as Put
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as BC
 import qualified Data.Maybe as Maybe
-import qualified Data.Sequence as Seq
+import Data.Sequence (Seq)
 import qualified Network.Monitoring.Riemann.Event as Event
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Network.Monitoring.Riemann.Proto.Msg as Msg
 import Network.Socket
-import Network.Socket.ByteString.Lazy as NSB
+  ( AddrInfo
+  , AddrInfoFlag(AI_NUMERICSERV)
+  , Family(AF_INET)
+  , HostName
+  , Socket
+  , SocketType(Stream)
+  , addrAddress
+  , addrFlags
+  , connect
+  , defaultHints
+  , defaultProtocol
+  , getAddrInfo
+  , socket
+  )
+import qualified Network.Socket.ByteString.Lazy as NSB
 import qualified Text.ProtocolBuffers.Header as P'
-import Text.ProtocolBuffers.WireMessage as WM
+import qualified Text.ProtocolBuffers.WireMessage as WM
 
 type ClientInfo = (HostName, Port, TCPStatus)
 
@@ -61,11 +75,11 @@ msgToByteString :: Msg.Msg -> BC.ByteString
 msgToByteString msg =
   Put.runPut $ do
     Put.putWord32be $ fromIntegral $ WM.messageSize msg
-    messagePutM msg
+    WM.messagePutM msg
 
 decodeMsg :: BC.ByteString -> Either String Msg.Msg
 decodeMsg bs =
-  let result = messageGet (BS.drop 4 bs)
+  let result = WM.messageGet (BS.drop 4 bs)
    in case result of
         Left e -> Left e
         Right (m, _) ->
@@ -77,7 +91,7 @@ sendMsg :: TCPConnection -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
 sendMsg client msg = do
   clientInfo@(h, p, _) <- takeMVar client
   (s, _) <- getConnection clientInfo
-  sendAll s $ msgToByteString msg
+  NSB.sendAll s $ msgToByteString msg
   bs <- NSB.recv s 4096
   case decodeMsg bs of
     Right m -> do
@@ -92,7 +106,7 @@ sendMsg client msg = do
 
     Host and Time will be added if they do not exist on the Event
 -}
-sendEvents :: TCPConnection -> Seq.Seq PE.Event -> IO ()
+sendEvents :: TCPConnection -> Seq PE.Event -> IO ()
 sendEvents connection events = do
   eventsWithDefaults <- Event.withDefaults events
     --     print $ "sending " ++ show (Seq.length events) ++ " events"

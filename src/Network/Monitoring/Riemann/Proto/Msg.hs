@@ -1,18 +1,16 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric,
   FlexibleInstances, MultiParamTypeClasses #-}
-{-# OPTIONS_GHC  -fno-warn-unused-imports #-}
 
 module Network.Monitoring.Riemann.Proto.Msg
   ( Msg(..)
   ) where
 
 import qualified Data.Data as Prelude'
-import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Network.Monitoring.Riemann.Proto.Event as Proto (Event)
 import qualified Network.Monitoring.Riemann.Proto.Query as Proto (Query)
 import qualified Network.Monitoring.Riemann.Proto.State as Proto (State)
-import Prelude ((+), (/))
+import Prelude ((+))
 import qualified Prelude as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 

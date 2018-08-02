@@ -1,6 +1,6 @@
 module Network.Monitoring.Riemann.LoggingClient where
 
-import Network.Monitoring.Riemann.Client
+import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 
 data LoggingClient =
   LoggingClient

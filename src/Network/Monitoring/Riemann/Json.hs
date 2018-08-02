@@ -19,8 +19,8 @@ import Data.Aeson
   )
 import Data.Scientific (toBoundedInteger, toBoundedRealFloat)
 import qualified Data.Text as Text
-import Network.Monitoring.Riemann.Proto.Attribute as PA
-import Network.Monitoring.Riemann.Proto.Event as PE
+import qualified Network.Monitoring.Riemann.Proto.Attribute as PA
+import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Text.ProtocolBuffers.Header as P'
 
 instance ToJSON P'.Utf8 where
@@ -55,7 +55,7 @@ instance FromJSON PE.Event where
             mMetric_d <|> (rightToJust . toBoundedRealFloat =<< mMetric)
           metric_f =
             mMetric_f <|> (rightToJust . toBoundedRealFloat =<< mMetric)
-      pure Event {..}
+      pure PE.Event {..}
 
 rightToJust :: Either l r -> Maybe r
 rightToJust (Left _) = Nothing

@@ -1,16 +1,10 @@
-{-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric,
-  FlexibleInstances, MultiParamTypeClasses #-}
-{-# OPTIONS_GHC  -fno-warn-unused-imports #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 module Network.Monitoring.Riemann.Proto
   ( protoInfo
   , fileDescriptorProto
   ) where
 
-import qualified Data.Data as Prelude'
-import qualified Data.Typeable as Prelude'
-import qualified GHC.Generics as Prelude'
-import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import Text.DescriptorProtos.FileDescriptorProto (FileDescriptorProto)
 import qualified Text.ProtocolBuffers.Header as P'
