@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Network.Monitoring.Riemann.LoggingClient where
 
 import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
@@ -13,6 +15,6 @@ data LoggingClient =
 loggingClient :: LoggingClient
 loggingClient = LoggingClient
 
-instance Client LoggingClient where
+instance Client IO LoggingClient where
   sendEvent _ = print
   close _ = print "close"

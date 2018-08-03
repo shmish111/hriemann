@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Network.Monitoring.Riemann.BatchClient where
@@ -122,14 +123,14 @@ riemannConsumer batchSize queue connection = loop
               in do hPutStrLn stderr "stopping riemann consumer"
                     putMVar s ()
 
-instance Client BatchClient where
+instance Client IO BatchClient where
   sendEvent (BatchClient inChan) event = Unagi.writeChan inChan $ Event event
   close (BatchClient inChan) = do
     s <- newEmptyMVar
     Unagi.writeChan inChan (Stop s)
     takeMVar s
 
-instance Client BatchClientNoBuffer where
+instance Client IO BatchClientNoBuffer where
   sendEvent (BatchClientNoBuffer queue) event = writeQueue queue $ Event event
   close (BatchClientNoBuffer queue) = do
     s <- newEmptyMVar

@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Network.Monitoring.Riemann.TCPClient where
 
 import qualified Data.Sequence as Seq
@@ -23,7 +24,7 @@ tcpClient h p = do
   c <- TCP.tcpConnection h p
   pure $ TCPClient c
 
-instance Client TCPClient where
+instance Client IO TCPClient where
   sendEvent (TCPClient connection) event =
     TCP.sendEvents connection $ Seq.singleton event
   close _ = print "close"
