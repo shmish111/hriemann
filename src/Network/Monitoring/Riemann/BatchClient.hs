@@ -110,20 +110,26 @@ riemannConsumer batchSize q connection = loop
   where
     loop = do
       cmds <- drainAll q batchSize
-      let (events', stops') =
-            Seq.partition
+      let (events, stops) =
+            separate
               (\case
-                 Event _ -> True
-                 Stop _ -> False)
+                 Event e -> Left e
+                 Stop s -> Right s)
               cmds
-          events = fmap (\(Event e) -> e) events'
-          stops = fmap (\(Stop s) -> s) stops'
       TCP.sendEvents connection events
       if Seq.null stops
         then loop
         else let s = Seq.index stops 0
               in do putStrLn "stopping riemann consumer"
                     putMVar s ()
+
+separate :: (a -> Either b c) -> Seq a -> (Seq b, Seq c)
+separate f = foldl g (Seq.empty, Seq.empty)
+  where
+    g (bs, cs) a =
+      case f a of
+        Left b -> (bs |> b, cs)
+        Right c -> (bs, cs |> c)
 
 instance Client BatchClient where
   sendEvent (BatchClient inChan) event = Unagi.writeChan inChan $ Event event
