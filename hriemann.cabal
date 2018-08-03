@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  ghc-options:         -Wall
+  ghc-options:         -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Wmissing-import-lists
   exposed-modules:     Network.Monitoring.Riemann.Client
                        Network.Monitoring.Riemann.Event
                        Network.Monitoring.Riemann.Event.Monoid
