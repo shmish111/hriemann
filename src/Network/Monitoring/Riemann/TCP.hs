@@ -35,6 +35,7 @@ import Network.Socket
   , socket
   )
 import qualified Network.Socket.ByteString.Lazy as NSB
+import System.IO (stderr, hPutStrLn)
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Text.ProtocolBuffers.WireMessage as WM
 
@@ -114,9 +115,8 @@ sendMsg client msg = do
 sendEvents :: TCPConnection -> Seq PE.Event -> IO ()
 sendEvents connection events = do
   eventsWithDefaults <- Event.withDefaults events
-    --     print $ "sending " ++ show (Seq.length events) ++ " events"
   result <-
     sendMsg connection $ P'.defaultValue {Msg.events = eventsWithDefaults}
   case result of
-    Left msg -> print $ "failed to send" ++ show msg
+    Left msg -> hPutStrLn stderr $ "failed to send" ++ show msg
     Right _ -> pure ()
