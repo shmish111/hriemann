@@ -13,7 +13,7 @@ import Control.Concurrent.KazuraQueue
   , writeQueue
   )
 import qualified Data.Sequence as Seq
-import Data.Sequence (Seq, (|>), singleton)
+import Data.Sequence (Seq, (|>))
 import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Network.Monitoring.Riemann.TCP as TCP
@@ -93,18 +93,15 @@ overflowConsumer outChan queue bufferSize f = loop
           writeQueue queue cmd
 
 drainAll :: Queue a -> Int -> IO (Seq a)
-drainAll queue n = do
+drainAll queue limit = do
   msg <- readQueue queue
-  loop $ singleton msg
+  loop (pure msg) (limit - 1)
   where
-    loop msgs =
-      if Seq.length msgs >= n
-        then pure msgs
-        else do
-          msg <- tryReadQueue queue
-          case msg of
-            Just m -> loop $ msgs |> m
-            Nothing -> pure msgs
+    loop msgs 0 = pure msgs
+    loop msgs n =
+      tryReadQueue queue >>= \case
+        Nothing -> pure msgs
+        Just msg -> loop (msgs |> msg) (n - 1)
 
 riemannConsumer :: Int -> Queue LogCommand -> TCP.TCPConnection -> IO ()
 riemannConsumer batchSize queue connection = loop
