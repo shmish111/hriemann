@@ -54,9 +54,9 @@ batchClient hostname port bufferSize batchSize overflow
   | otherwise = do
     connection <- TCP.tcpConnection hostname port
     (inChan, outChan) <- Unagi.newChan
-    q <- newQueue
-    _ <- forkIO $ overflowConsumer outChan q bufferSize overflow
-    _ <- forkIO $ riemannConsumer batchSize q connection
+    queue <- newQueue
+    _ <- forkIO $ overflowConsumer outChan queue bufferSize overflow
+    _ <- forkIO $ riemannConsumer batchSize queue connection
     pure $ BatchClient inChan
 
 bufferlessBatchClient :: HostName -> TCP.Port -> Int -> IO BatchClientNoBuffer
@@ -64,9 +64,9 @@ bufferlessBatchClient hostname port batchSize
   | batchSize <= 0 = error "Batch Size must be positive"
   | otherwise = do
     connection <- TCP.tcpConnection hostname port
-    q <- newQueue
-    _ <- forkIO $ riemannConsumer batchSize q connection
-    pure $ BatchClientNoBuffer q
+    queue <- newQueue
+    _ <- forkIO $ riemannConsumer batchSize queue connection
+    pure $ BatchClientNoBuffer queue
 
 overflowConsumer ::
      Unagi.OutChan LogCommand
@@ -74,43 +74,43 @@ overflowConsumer ::
   -> Int
   -> (PE.Event -> IO ())
   -> IO ()
-overflowConsumer outChan q bufferSize f = loop
+overflowConsumer outChan queue bufferSize f = loop
   where
     loop = do
       cmd <- Unagi.readChan outChan
       case cmd of
         Event event -> do
-          qSize <- lengthQueue q
+          qSize <- lengthQueue queue
           if qSize >= bufferSize
             then do
               f event
               loop
             else do
-              writeQueue q cmd
+              writeQueue queue cmd
               loop
         Stop _ -> do
           hPutStrLn stderr "stopping log consumer"
-          writeQueue q cmd
+          writeQueue queue cmd
 
 drainAll :: Queue a -> Int -> IO (Seq a)
-drainAll q n = do
-  msg <- readQueue q
+drainAll queue n = do
+  msg <- readQueue queue
   loop $ singleton msg
   where
     loop msgs =
       if Seq.length msgs >= n
         then pure msgs
         else do
-          msg <- tryReadQueue q
+          msg <- tryReadQueue queue
           case msg of
             Just m -> loop $ msgs |> m
             Nothing -> pure msgs
 
 riemannConsumer :: Int -> Queue LogCommand -> TCP.TCPConnection -> IO ()
-riemannConsumer batchSize q connection = loop
+riemannConsumer batchSize queue connection = loop
   where
     loop = do
-      cmds <- drainAll q batchSize
+      cmds <- drainAll queue batchSize
       let (events, stops) =
             separate
               (\case
@@ -140,8 +140,8 @@ instance Client BatchClient where
     takeMVar s
 
 instance Client BatchClientNoBuffer where
-  sendEvent (BatchClientNoBuffer q) event = writeQueue q $ Event event
-  close (BatchClientNoBuffer q) = do
+  sendEvent (BatchClientNoBuffer queue) event = writeQueue queue $ Event event
+  close (BatchClientNoBuffer queue) = do
     s <- newEmptyMVar
-    writeQueue q (Stop s)
+    writeQueue queue (Stop s)
     takeMVar s
