@@ -1,8 +1,9 @@
 module Network.Monitoring.Riemann.LoggingClient where
 
-import           Network.Monitoring.Riemann.Client
+import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 
-data LoggingClient = LoggingClient
+data LoggingClient =
+  LoggingClient
 
 {-|
     A new LoggingClient
@@ -13,5 +14,5 @@ loggingClient :: LoggingClient
 loggingClient = LoggingClient
 
 instance Client LoggingClient where
-    sendEvent _ = print
-    close _ = print "close"
+  sendEvent _ = print
+  close _ = print "close"
