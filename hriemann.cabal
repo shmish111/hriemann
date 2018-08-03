@@ -29,6 +29,7 @@ library
                        Network.Monitoring.Riemann.Proto.Msg
                        Network.Monitoring.Riemann.Proto.Query
                        Network.Monitoring.Riemann.Proto.State
+                       Data.Sequence.Extra
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , protocol-buffers

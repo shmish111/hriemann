@@ -14,6 +14,7 @@ import Control.Concurrent.KazuraQueue
   )
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq, (|>))
+import qualified Data.Sequence.Extra as Seq
 import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Network.Monitoring.Riemann.TCP as TCP
@@ -109,7 +110,7 @@ riemannConsumer batchSize queue connection = loop
     loop = do
       cmds <- drainAll queue batchSize
       let (events, stops) =
-            separate
+            Seq.separate
               (\case
                  Event e -> Left e
                  Stop s -> Right s)
@@ -120,14 +121,6 @@ riemannConsumer batchSize queue connection = loop
         else let s = Seq.index stops 0
               in do hPutStrLn stderr "stopping riemann consumer"
                     putMVar s ()
-
-separate :: (a -> Either b c) -> Seq a -> (Seq b, Seq c)
-separate f = foldl g (Seq.empty, Seq.empty)
-  where
-    g (bs, cs) a =
-      case f a of
-        Left b -> (bs |> b, cs)
-        Right c -> (bs, cs |> c)
 
 instance Client BatchClient where
   sendEvent (BatchClient inChan) event = Unagi.writeChan inChan $ Event event
