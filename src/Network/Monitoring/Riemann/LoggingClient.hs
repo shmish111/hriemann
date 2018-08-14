@@ -1,7 +1,9 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Network.Monitoring.Riemann.LoggingClient where
 
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 
 data LoggingClient =
@@ -15,6 +17,6 @@ data LoggingClient =
 loggingClient :: LoggingClient
 loggingClient = LoggingClient
 
-instance Client IO LoggingClient where
-  sendEvent _ = print
-  close _ = print "close"
+instance MonadIO m => Client m LoggingClient where
+  sendEvent _ = liftIO . print
+  close _ = liftIO $ print "close"

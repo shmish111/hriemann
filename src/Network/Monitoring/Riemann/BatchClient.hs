@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE LambdaCase #-}
 
@@ -13,6 +14,7 @@ import Control.Concurrent.KazuraQueue
   , tryReadQueue
   , writeQueue
   )
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence.Extra as Seq
@@ -123,16 +125,20 @@ riemannConsumer batchSize queue connection = loop
               in do hPutStrLn stderr "stopping riemann consumer"
                     putMVar s ()
 
-instance Client IO BatchClient where
-  sendEvent (BatchClient inChan) event = Unagi.writeChan inChan $ Event event
-  close (BatchClient inChan) = do
-    s <- newEmptyMVar
-    Unagi.writeChan inChan (Stop s)
-    takeMVar s
+instance MonadIO m => Client m BatchClient where
+  sendEvent (BatchClient inChan) event =
+    liftIO . Unagi.writeChan inChan $ Event event
+  close (BatchClient inChan) =
+    liftIO $ do
+      s <- newEmptyMVar
+      Unagi.writeChan inChan (Stop s)
+      takeMVar s
 
-instance Client IO BatchClientNoBuffer where
-  sendEvent (BatchClientNoBuffer queue) event = writeQueue queue $ Event event
-  close (BatchClientNoBuffer queue) = do
-    s <- newEmptyMVar
-    writeQueue queue (Stop s)
-    takeMVar s
+instance MonadIO m => Client m BatchClientNoBuffer where
+  sendEvent (BatchClientNoBuffer queue) event =
+    liftIO . writeQueue queue $ Event event
+  close (BatchClientNoBuffer queue) =
+    liftIO $ do
+      s <- newEmptyMVar
+      writeQueue queue (Stop s)
+      takeMVar s
