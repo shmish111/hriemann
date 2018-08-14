@@ -35,7 +35,7 @@ import Network.Socket
   , socket
   )
 import qualified Network.Socket.ByteString.Lazy as NSB
-import System.IO (stderr, hPutStrLn)
+import System.IO (hPutStrLn, stderr)
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Text.ProtocolBuffers.WireMessage as WM
 
