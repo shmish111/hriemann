@@ -18,6 +18,7 @@ import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Network.Monitoring.Riemann.TCP as TCP
 import Network.Socket (HostName)
+import System.IO (hPutStrLn, stderr)
 
 newtype BatchClient =
   BatchClient (Unagi.InChan LogCommand)
@@ -88,7 +89,7 @@ overflowConsumer outChan q bufferSize f = loop
               writeQueue q cmd
               loop
         Stop _ -> do
-          putStrLn "stopping log consumer"
+          hPutStrLn stderr "stopping log consumer"
           writeQueue q cmd
 
 drainAll :: Queue a -> Int -> IO (Seq a)
@@ -120,7 +121,7 @@ riemannConsumer batchSize q connection = loop
       if Seq.null stops
         then loop
         else let s = Seq.index stops 0
-              in do putStrLn "stopping riemann consumer"
+              in do hPutStrLn stderr "stopping riemann consumer"
                     putMVar s ()
 
 separate :: (a -> Either b c) -> Seq a -> (Seq b, Seq c)
