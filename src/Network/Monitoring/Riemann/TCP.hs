@@ -21,7 +21,7 @@ import qualified Network.Monitoring.Riemann.Proto.Msg as Msg
 import Network.Socket
   ( AddrInfo
   , AddrInfoFlag(AI_NUMERICSERV)
-  , Family(AF_INET)
+  , Family(AF_INET, AF_INET6)
   , HostName
   , Socket
   , SocketType(Stream)
@@ -31,6 +31,7 @@ import Network.Socket
   , defaultHints
   , defaultProtocol
   , getAddrInfo
+  , isSupportedFamily
   , socket
   )
 import qualified Network.Socket.ByteString.Lazy as NSB
@@ -64,10 +65,14 @@ doConnect hn po = do
       (Just $ defaultHints {addrFlags = [AI_NUMERICSERV]})
       (Just hn)
       (Just $ show po)
+  let family =
+        if isSupportedFamily AF_INET6
+          then AF_INET6
+          else AF_INET
   case addrs of
     [] -> fail ("No accessible addresses in " ++ show addrs)
     (addy:_) -> do
-      s <- socket AF_INET Stream defaultProtocol
+      s <- socket family Stream defaultProtocol
       connect s (addrAddress addy)
       pure (s, addy)
 
