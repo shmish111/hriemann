@@ -13,7 +13,8 @@ import Control.Concurrent.KazuraQueue
   , writeQueue
   )
 import qualified Data.Sequence as Seq
-import Data.Sequence (Seq, (|>), singleton)
+import Data.Sequence (Seq, (|>))
+import qualified Data.Sequence.Extra as Seq
 import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
 import qualified Network.Monitoring.Riemann.TCP as TCP
@@ -54,9 +55,9 @@ batchClient hostname port bufferSize batchSize overflow
   | otherwise = do
     connection <- TCP.tcpConnection hostname port
     (inChan, outChan) <- Unagi.newChan
-    q <- newQueue
-    _ <- forkIO $ overflowConsumer outChan q bufferSize overflow
-    _ <- forkIO $ riemannConsumer batchSize q connection
+    queue <- newQueue
+    _ <- forkIO $ overflowConsumer outChan queue bufferSize overflow
+    _ <- forkIO $ riemannConsumer batchSize queue connection
     pure $ BatchClient inChan
 
 bufferlessBatchClient :: HostName -> TCP.Port -> Int -> IO BatchClientNoBuffer
@@ -64,9 +65,9 @@ bufferlessBatchClient hostname port batchSize
   | batchSize <= 0 = error "Batch Size must be positive"
   | otherwise = do
     connection <- TCP.tcpConnection hostname port
-    q <- newQueue
-    _ <- forkIO $ riemannConsumer batchSize q connection
-    pure $ BatchClientNoBuffer q
+    queue <- newQueue
+    _ <- forkIO $ riemannConsumer batchSize queue connection
+    pure $ BatchClientNoBuffer queue
 
 overflowConsumer ::
      Unagi.OutChan LogCommand
@@ -74,45 +75,42 @@ overflowConsumer ::
   -> Int
   -> (PE.Event -> IO ())
   -> IO ()
-overflowConsumer outChan q bufferSize f = loop
+overflowConsumer outChan queue bufferSize f = loop
   where
     loop = do
       cmd <- Unagi.readChan outChan
       case cmd of
         Event event -> do
-          qSize <- lengthQueue q
+          qSize <- lengthQueue queue
           if qSize >= bufferSize
             then do
               f event
               loop
             else do
-              writeQueue q cmd
+              writeQueue queue cmd
               loop
         Stop _ -> do
           hPutStrLn stderr "stopping log consumer"
-          writeQueue q cmd
+          writeQueue queue cmd
 
 drainAll :: Queue a -> Int -> IO (Seq a)
-drainAll q n = do
-  msg <- readQueue q
-  loop $ singleton msg
+drainAll queue limit = do
+  msg <- readQueue queue
+  loop (pure msg) (limit - 1)
   where
-    loop msgs =
-      if Seq.length msgs >= n
-        then pure msgs
-        else do
-          msg <- tryReadQueue q
-          case msg of
-            Just m -> loop $ msgs |> m
-            Nothing -> pure msgs
+    loop msgs 0 = pure msgs
+    loop msgs n =
+      tryReadQueue queue >>= \case
+        Nothing -> pure msgs
+        Just msg -> loop (msgs |> msg) (n - 1)
 
 riemannConsumer :: Int -> Queue LogCommand -> TCP.TCPConnection -> IO ()
-riemannConsumer batchSize q connection = loop
+riemannConsumer batchSize queue connection = loop
   where
     loop = do
-      cmds <- drainAll q batchSize
+      cmds <- drainAll queue batchSize
       let (events, stops) =
-            separate
+            Seq.separate
               (\case
                  Event e -> Left e
                  Stop s -> Right s)
@@ -124,14 +122,6 @@ riemannConsumer batchSize q connection = loop
               in do hPutStrLn stderr "stopping riemann consumer"
                     putMVar s ()
 
-separate :: (a -> Either b c) -> Seq a -> (Seq b, Seq c)
-separate f = foldl g (Seq.empty, Seq.empty)
-  where
-    g (bs, cs) a =
-      case f a of
-        Left b -> (bs |> b, cs)
-        Right c -> (bs, cs |> c)
-
 instance Client BatchClient where
   sendEvent (BatchClient inChan) event = Unagi.writeChan inChan $ Event event
   close (BatchClient inChan) = do
@@ -140,8 +130,8 @@ instance Client BatchClient where
     takeMVar s
 
 instance Client BatchClientNoBuffer where
-  sendEvent (BatchClientNoBuffer q) event = writeQueue q $ Event event
-  close (BatchClientNoBuffer q) = do
+  sendEvent (BatchClientNoBuffer queue) event = writeQueue queue $ Event event
+  close (BatchClientNoBuffer queue) = do
     s <- newEmptyMVar
-    writeQueue q (Stop s)
+    writeQueue queue (Stop s)
     takeMVar s
