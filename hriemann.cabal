@@ -41,6 +41,7 @@ library
                      , containers
                      , binary
                      , time
+                     , mtl
                      , hostname
                      , unagi-chan
                      , kazura-queue

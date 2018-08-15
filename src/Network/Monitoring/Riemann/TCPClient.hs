@@ -1,5 +1,9 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Network.Monitoring.Riemann.TCPClient where
 
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Sequence as Seq
 import Network.Monitoring.Riemann.Client (Client, close, sendEvent)
 import qualified Network.Monitoring.Riemann.TCP as TCP
@@ -23,7 +27,7 @@ tcpClient h p = do
   c <- TCP.tcpConnection h p
   pure $ TCPClient c
 
-instance Client TCPClient where
+instance MonadIO m => Client m TCPClient where
   sendEvent (TCPClient connection) event =
-    TCP.sendEvents connection $ Seq.singleton event
-  close _ = print "close"
+    liftIO $ TCP.sendEvents connection $ Seq.singleton event
+  close _ = liftIO $ print "close"
