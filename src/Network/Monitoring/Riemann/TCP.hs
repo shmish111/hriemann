@@ -21,7 +21,7 @@ import qualified Network.Monitoring.Riemann.Proto.Msg as Msg
 import Network.Socket
   ( AddrInfo
   , AddrInfoFlag(AI_NUMERICSERV)
-  , Family(AF_INET, AF_INET6)
+  , Family(AF_INET)
   , HostName
   , Socket
   , SocketType(Stream)
@@ -32,7 +32,6 @@ import Network.Socket
   , defaultHints
   , defaultProtocol
   , getAddrInfo
-  , isSupportedFamily
   , socket
   )
 import qualified Network.Socket.ByteString.Lazy as NSB

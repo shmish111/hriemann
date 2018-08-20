@@ -1,0 +1,76 @@
+name: hriemann
+version: '0.3.2.2'
+synopsis: A Riemann Client for Haskell
+description: A Riemann Client for Haskell
+category: Monitoring
+author: David Smith
+maintainer: shmish111@gmail.com
+copyright: 2017 David Smith
+license: MIT
+github: shmish111/hriemann
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Wmissing-import-lists
+  exposed-modules:
+  - Network.Monitoring.Riemann.Client
+  - Network.Monitoring.Riemann.Event
+  - Network.Monitoring.Riemann.Event.Monoid
+  - Network.Monitoring.Riemann.Json
+  - Network.Monitoring.Riemann.TCP
+  - Network.Monitoring.Riemann.LoggingClient
+  - Network.Monitoring.Riemann.TCPClient
+  - Network.Monitoring.Riemann.BatchClient
+  - Network.Monitoring.Riemann.Proto.Attribute
+  - Network.Monitoring.Riemann.Proto.Event
+  - Network.Monitoring.Riemann.Proto.Msg
+  - Network.Monitoring.Riemann.Proto.Query
+  - Network.Monitoring.Riemann.Proto.State
+  dependencies:
+  - base >=4.7 && <5
+  - aeson
+  - protocol-buffers
+  - protocol-buffers-descriptor
+  - bytestring
+  - network
+  - scientific
+  - text
+  - containers
+  - binary
+  - time
+  - mtl
+  - hostname
+  - unagi-chan
+  - kazura-queue
+  - criterion
+executables:
+  hriemann-exe:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - hriemann
+tests:
+  hriemann-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - hriemann
+    - containers
+    - HUnit
+    - hspec
+    - hspec-core
+    - QuickCheck
+    - kazura-queue
