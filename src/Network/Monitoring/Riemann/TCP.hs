@@ -27,6 +27,7 @@ import Network.Socket
   , SocketType(Stream)
   , addrAddress
   , addrFlags
+  , addrFamily
   , connect
   , defaultHints
   , defaultProtocol
@@ -63,13 +64,10 @@ doConnect :: HostName -> Port -> IO (Socket, AddrInfo)
 doConnect hn po = do
   addrs <-
     getAddrInfo
-      (Just $ defaultHints {addrFlags = [AI_NUMERICSERV]})
+      (Just $ defaultHints {addrFlags = [AI_NUMERICSERV], addrFamily = AF_INET})
       (Just hn)
       (Just $ show po)
-  let family =
-        if isSupportedFamily AF_INET6
-          then AF_INET6
-          else AF_INET
+  let family = AF_INET
   case addrs of
     [] -> fail ("No accessible addresses in " ++ show addrs)
     (addy:_) -> do
