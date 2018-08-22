@@ -1,5 +1,5 @@
 name: hriemann
-version: '0.3.2.2'
+version: '0.3.3.0'
 synopsis: A Riemann Client for Haskell
 description: A Riemann Client for Haskell
 category: Monitoring
