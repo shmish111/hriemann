@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC  -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
 
 module Network.Monitoring.Riemann.Json where
 
@@ -11,6 +12,7 @@ import Data.Aeson
   , ToJSON
   , Value(String)
   , (.!=)
+  , (.:)
   , (.:?)
   , parseJSON
   , toJSON
@@ -19,8 +21,12 @@ import Data.Aeson
   )
 import Data.Scientific (toBoundedInteger, toBoundedRealFloat)
 import qualified Data.Text as Text
-import qualified Network.Monitoring.Riemann.Proto.Attribute as PA
-import qualified Network.Monitoring.Riemann.Proto.Event as PE
+import Network.Monitoring.Riemann.Proto.Attribute (Attribute)
+import Network.Monitoring.Riemann.Proto.Event (Event(..))
+import Network.Monitoring.Riemann.Proto.Msg (Msg(..))
+import Network.Monitoring.Riemann.Proto.Query (Query(..))
+import Network.Monitoring.Riemann.Proto.State (State(..))
+import Prelude hiding (error)
 import qualified Text.ProtocolBuffers.Header as P'
 
 instance ToJSON P'.Utf8 where
@@ -29,13 +35,13 @@ instance ToJSON P'.Utf8 where
 instance FromJSON P'.Utf8 where
   parseJSON = withText "Utf8 String" $ pure . P'.uFromString . Text.unpack
 
-instance ToJSON PA.Attribute
+instance ToJSON Attribute
 
-instance FromJSON PA.Attribute
+instance FromJSON Attribute
 
-instance ToJSON PE.Event
+instance ToJSON Event
 
-instance FromJSON PE.Event where
+instance FromJSON Event where
   parseJSON =
     withObject "Event" $ \v -> do
       time <- v .:? "time"
@@ -55,7 +61,42 @@ instance FromJSON PE.Event where
             mMetric_d <|> (rightToJust . toBoundedRealFloat =<< mMetric)
           metric_f =
             mMetric_f <|> (rightToJust . toBoundedRealFloat =<< mMetric)
-      pure PE.Event {..}
+      pure Event {..}
+
+instance ToJSON Query
+
+instance FromJSON Query where
+  parseJSON =
+    withObject "Query" $ \v -> do
+      string <- v .: "string"
+      pure Query {..}
+
+instance ToJSON State
+
+instance FromJSON State where
+  parseJSON =
+    withObject "State" $ \v -> do
+      time <- v .:? "time"
+      state <- v .:? "state"
+      service <- v .:? "service"
+      host <- v .:? "host"
+      description <- v .:? "description"
+      once <- v .:? "once"
+      tags <- v .:? "tags" .!= []
+      ttl <- v .:? "ttl"
+      pure State {..}
+
+instance ToJSON Msg
+
+instance FromJSON Msg where
+  parseJSON =
+    withObject "Msg" $ \v -> do
+      ok <- v .:? "ok"
+      error <- v .:? "error"
+      states <- v .: "states" .!= []
+      query <- v .:? "query"
+      events <- v .: "events" .!= []
+      pure Msg {..}
 
 rightToJust :: Either l r -> Maybe r
 rightToJust (Left _) = Nothing
