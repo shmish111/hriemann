@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Network.Monitoring.Riemann.TCP
@@ -10,10 +12,12 @@ module Network.Monitoring.Riemann.TCP
   ) where
 
 import Control.Concurrent (MVar, newMVar, putMVar, takeMVar)
+import Control.Exception (try)
 import qualified Data.Binary.Put as Put
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as BC
 import qualified Data.Maybe as Maybe
+import Data.Monoid ((<>))
 import Data.Sequence (Seq)
 import qualified Network.Monitoring.Riemann.Event as Event
 import qualified Network.Monitoring.Riemann.Proto.Event as PE
@@ -39,7 +43,11 @@ import System.IO (hPutStrLn, stderr)
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Text.ProtocolBuffers.WireMessage as WM
 
-type ClientInfo = (HostName, Port, TCPStatus)
+data ClientInfo = ClientInfo
+  { _hostname :: HostName
+  , _port :: Port
+  , _status :: TCPStatus
+  }
 
 type TCPConnection = MVar ClientInfo
 
@@ -51,28 +59,37 @@ data TCPStatus
 type Port = Int
 
 tcpConnection :: HostName -> Port -> IO TCPConnection
-tcpConnection h p = do
-  connection <- doConnect h p
-  newMVar (h, p, CnxOpen connection)
+tcpConnection _hostname _port = do
+  clientInfo <- doConnect $ ClientInfo {_status = CnxClosed, ..}
+  newMVar clientInfo
 
-getConnection :: ClientInfo -> IO (Socket, AddrInfo)
-getConnection (_, _, CnxOpen (s, a)) = pure (s, a)
-getConnection (h, p, CnxClosed) = doConnect h p
-
-doConnect :: HostName -> Port -> IO (Socket, AddrInfo)
-doConnect hn po = do
+doConnect :: ClientInfo -> IO ClientInfo
+doConnect clientInfo@(_status -> CnxOpen _) = pure clientInfo
+doConnect clientInfo = do
+  hPutStrLn stderr $
+    "(Re)connecting to Riemann: " <> _hostname clientInfo <> ":" <>
+    show (_port clientInfo)
   addrs <-
+    try $
     getAddrInfo
       (Just $ defaultHints {addrFlags = [AI_NUMERICSERV], addrFamily = AF_INET})
-      (Just hn)
-      (Just $ show po)
+      (Just (_hostname clientInfo))
+      (Just . show . _port $ clientInfo)
   let family = AF_INET
   case addrs of
-    [] -> fail ("No accessible addresses in " ++ show addrs)
-    (addy:_) -> do
+    Right [] -> fail ("No accessible addresses in " ++ show addrs)
+    Right (addy:_) -> do
       s <- socket family Stream defaultProtocol
-      connect s (addrAddress addy)
-      pure (s, addy)
+      result <- try $ connect s (addrAddress addy)
+      case result of
+        Left err -> handleError err
+        Right () -> pure $ clientInfo {_status = CnxOpen (s, addy)}
+    Left err -> handleError err
+  where
+    handleError :: IOError -> IO ClientInfo
+    handleError err = do
+      hPutStrLn stderr $ "Connection to Riemann failed: " <> show err
+      pure $ clientInfo {_status = CnxClosed}
 
 msgToByteString :: Msg.Msg -> BC.ByteString
 msgToByteString msg =
@@ -90,19 +107,33 @@ decodeMsg bs =
             then Left "error"
             else Right m
 
+{-| Attempts to send a message and return the response.
+
+If the connection is down, this function will trigger one reconnection attempt.
+If that succeeds the message will be sent.
+If it fails, the message is dropped and will need to be resent by you.
+-}
 sendMsg :: TCPConnection -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
-sendMsg client msg = do
-  clientInfo@(h, p, _) <- takeMVar client
-  (s, _) <- getConnection clientInfo
-  NSB.sendAll s $ msgToByteString msg
-  bs <- NSB.recv s 4096
-  case decodeMsg bs of
-    Right m -> do
-      putMVar client clientInfo
-      pure $ Right m
-    Left _ -> do
-      putMVar client (h, p, CnxClosed)
-      pure $ Left msg
+sendMsg client msg = go True
+  where
+    go reconnect = do
+      clientInfo <- takeMVar client
+      case (_status clientInfo, reconnect) of
+        (CnxClosed, True) -> pure $ Left msg
+        (CnxClosed, False) -> do
+          newInfo <- doConnect clientInfo
+          putMVar client newInfo
+          go False
+        (CnxOpen (s, _), _) -> do
+          NSB.sendAll s $ msgToByteString msg
+          bs <- NSB.recv s 4096
+          case decodeMsg bs of
+            Right m -> do
+              putMVar client clientInfo
+              pure $ Right m
+            Left _ -> do
+              putMVar client (clientInfo {_status = CnxClosed})
+              pure $ Left msg
 
 {-|
     Send a list of Riemann events
