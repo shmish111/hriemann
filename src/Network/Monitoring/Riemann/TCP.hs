@@ -26,8 +26,8 @@ import Network.Socket
   , Socket
   , SocketType(Stream)
   , addrAddress
-  , addrFlags
   , addrFamily
+  , addrFlags
   , connect
   , defaultHints
   , defaultProtocol
