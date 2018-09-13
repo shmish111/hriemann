@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cda6f6548a8d70c5dea6941429fe0fe72a2613682c484fbdbd4246661ac0d25a
+-- hash: 5ca5823f2b11010648ab39f12ed719581c100a8d0da5e71d4248189a9afd02bd
 
 name:           hriemann
 version:        0.3.3.0
@@ -59,6 +59,7 @@ library
     , protocol-buffers
     , protocol-buffers-descriptor
     , scientific
+    , stm
     , text
     , time
     , unagi-chan
