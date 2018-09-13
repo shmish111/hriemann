@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cda6f6548a8d70c5dea6941429fe0fe72a2613682c484fbdbd4246661ac0d25a
+-- hash: 02c6f9cc6fa0ddb8bf2db0ae03e66a26f59d2620504af25e742ac84f44752bbf
 
 name:           hriemann
-version:        0.3.3.0
+version:        0.3.3.1
 synopsis:       A Riemann Client for Haskell
 description:    A Riemann Client for Haskell
 category:       Monitoring
