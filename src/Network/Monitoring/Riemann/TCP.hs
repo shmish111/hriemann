@@ -11,8 +11,10 @@ module Network.Monitoring.Riemann.TCP
   , Port
   ) where
 
-import Control.Concurrent (MVar, newMVar, putMVar, takeMVar)
-import Control.Exception (try)
+import Control.Concurrent.STM (atomically)
+import Control.Concurrent.STM.TVar (TVar, newTVarIO, readTVarIO, writeTVar)
+import Control.Exception (IOException, try)
+import Data.Bifunctor (first)
 import qualified Data.Binary.Put as Put
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as BC
@@ -49,7 +51,7 @@ data ClientInfo = ClientInfo
   , _status :: TCPStatus
   }
 
-type TCPConnection = MVar ClientInfo
+type TCPConnection = TVar ClientInfo
 
 data TCPStatus
   = CnxClosed
@@ -61,7 +63,7 @@ type Port = Int
 tcpConnection :: HostName -> Port -> IO TCPConnection
 tcpConnection _hostname _port = do
   clientInfo <- doConnect $ ClientInfo {_status = CnxClosed, ..}
-  newMVar clientInfo
+  newTVarIO clientInfo
 
 doConnect :: ClientInfo -> IO ClientInfo
 doConnect clientInfo@(_status -> CnxOpen _) = pure clientInfo
@@ -117,23 +119,25 @@ sendMsg :: TCPConnection -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
 sendMsg client msg = go True
   where
     go reconnect = do
-      clientInfo <- takeMVar client
+      putStrLn $ "SENDING " <> show reconnect
+      clientInfo <- readTVarIO client
       case (_status clientInfo, reconnect) of
-        (CnxClosed, True) -> pure $ Left msg
-        (CnxClosed, False) -> do
+        (CnxClosed, True) -> do
           newInfo <- doConnect clientInfo
-          putMVar client newInfo
+          atomically $ writeTVar client newInfo
           go False
+        (CnxClosed, False) -> pure $ Left msg
         (CnxOpen (s, _), _) -> do
-          NSB.sendAll s $ msgToByteString msg
-          bs <- NSB.recv s 4096
-          case decodeMsg bs of
-            Right m -> do
-              putMVar client clientInfo
-              pure $ Right m
+          response <-
+            first (show :: IOException -> String) <$>
+            try
+              (do NSB.sendAll s $ msgToByteString msg
+                  NSB.recv s 4096)
+          case decodeMsg =<< response of
             Left _ -> do
-              putMVar client (clientInfo {_status = CnxClosed})
+              atomically $ writeTVar client (clientInfo {_status = CnxClosed})
               pure $ Left msg
+            Right m -> pure $ Right m
 
 {-|
     Send a list of Riemann events
