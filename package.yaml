@@ -42,6 +42,7 @@ library:
   - binary
   - time
   - mtl
+  - stm
   - hostname
   - unagi-chan
   - kazura-queue
