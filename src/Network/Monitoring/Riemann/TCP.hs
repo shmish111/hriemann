@@ -119,7 +119,6 @@ sendMsg :: TCPConnection -> Msg.Msg -> IO (Either Msg.Msg Msg.Msg)
 sendMsg client msg = go True
   where
     go reconnect = do
-      putStrLn $ "SENDING " <> show reconnect
       clientInfo <- readTVarIO client
       case (_status clientInfo, reconnect) of
         (CnxClosed, True) -> do
