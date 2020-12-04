@@ -1,39 +1,28 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Network.Monitoring.Riemann.Json where
 
 import Control.Applicative ((<|>))
 import Data.Aeson
-  ( FromJSON
-  , ToJSON
-  , Value(String)
-  , (.!=)
-  , (.:)
-  , (.:?)
-  , parseJSON
-  , toJSON
-  , withObject
-  , withText
+  ( FromJSON,
+    ToJSON,
+    parseJSON,
+    withObject,
+    (.!=),
+    (.:),
+    (.:?),
   )
 import Data.Scientific (toBoundedInteger, toBoundedRealFloat)
-import qualified Data.Text as Text
 import Network.Monitoring.Riemann.Proto.Attribute (Attribute)
-import Network.Monitoring.Riemann.Proto.Event (Event(..))
-import Network.Monitoring.Riemann.Proto.Msg (Msg(..))
-import Network.Monitoring.Riemann.Proto.Query (Query(..))
-import Network.Monitoring.Riemann.Proto.State (State(..))
+import Network.Monitoring.Riemann.Proto.Event (Event (..))
+import Network.Monitoring.Riemann.Proto.Msg (Msg (..))
+import Network.Monitoring.Riemann.Proto.Query (Query (..))
+import Network.Monitoring.Riemann.Proto.State (State (..))
 import Prelude hiding (error)
-import qualified Text.ProtocolBuffers.Header as P'
-
-instance ToJSON P'.Utf8 where
-  toJSON v = String (Text.pack (P'.uToString v))
-
-instance FromJSON P'.Utf8 where
-  parseJSON = withText "Utf8 String" $ pure . P'.uFromString . Text.unpack
 
 instance ToJSON Attribute
 

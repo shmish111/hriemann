@@ -1,11 +1,13 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5ca5823f2b11010648ab39f12ed719581c100a8d0da5e71d4248189a9afd02bd
+-- hash: 2947d7e33a64a743d8f7eb7a408e33dd35a16872749482aa16d4072cfb0fd274
 
 name:           hriemann
-version:        0.3.3.0
+version:        0.3.3.4
 synopsis:       A Riemann Client for Haskell
 description:    A Riemann Client for Haskell
 category:       Monitoring
@@ -17,7 +19,6 @@ copyright:      2017 David Smith
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 
 source-repository head
   type: git
